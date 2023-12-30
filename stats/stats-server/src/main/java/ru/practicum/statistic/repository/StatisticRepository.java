@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Component;
-import ru.practicum.statistic.dto.StatisticResponseDto;
 import ru.practicum.statistic.model.Statistic;
 import ru.practicum.statistic.model.view.StatisticView;
 
