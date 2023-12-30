@@ -1,4 +1,4 @@
-package ru.practicum.endpointstatistic.model;
+package ru.practicum.statistic.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "endpoints_stat", schema = "public")
-public class EndpointStatistic {
+@Table(name = "stat", schema = "public")
+public class Statistic {
     @Column(name = "id")
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

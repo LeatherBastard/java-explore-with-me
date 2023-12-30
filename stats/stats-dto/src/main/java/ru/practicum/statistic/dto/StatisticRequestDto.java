@@ -1,4 +1,4 @@
-package ru.practicum.endpointstatistic.dto;
+package ru.practicum.statistic.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +10,7 @@ import javax.validation.constraints.NotEmpty;
 @Data
 @AllArgsConstructor
 @Builder
-public class EndpointStatisticRequestDto {
+public class StatisticRequestDto {
     @NotEmpty
     private String app;
     @NotEmpty

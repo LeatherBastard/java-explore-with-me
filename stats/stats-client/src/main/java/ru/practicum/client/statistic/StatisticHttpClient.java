@@ -1,4 +1,4 @@
-package ru.practicum.client.endpointstatistic;
+package ru.practicum.client.statistic;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,25 +10,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
-import ru.practicum.endpointstatistic.dto.EndpointStatisticRequestDto;
+import ru.practicum.statistic.dto.StatisticRequestDto;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 @Service
-public class EndpointStatisticHttpClient {
+public class StatisticHttpClient {
     private final RestTemplate rest;
 
     @Autowired
-    public EndpointStatisticHttpClient(@Value("${stats-server.url}") String serverUrl, RestTemplateBuilder builder) {
+    public StatisticHttpClient(@Value("${stats-server.url}") String serverUrl, RestTemplateBuilder builder) {
         rest = builder
                 .uriTemplateHandler(new DefaultUriBuilderFactory(serverUrl))
                 .requestFactory(HttpComponentsClientHttpRequestFactory::new)
                 .build();
     }
 
-    public ResponseEntity<Object> addHit(EndpointStatisticRequestDto requestDto) {
+    public ResponseEntity<Object> addHit(StatisticRequestDto requestDto) {
         return post("/hit", null, requestDto);
     }
 
