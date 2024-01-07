@@ -10,7 +10,7 @@ services:
       - stats-db
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://stats-db:5432/statistic
-      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_USERNAME=ru.practicum.user
       - SPRING_DATASOURCE_PASSWORD=pass
 
   stats-db:
@@ -20,7 +20,7 @@ services:
       - "6541:5432"
     environment:
       - POSTGRES_DB=statistic
-      - POSTGRES_USER=user
+      - POSTGRES_USER=ru.practicum.user
       - POSTGRES_PASSWORD=pass
 
   ewm-service:
@@ -33,7 +33,7 @@ services:
       - ewm-db
     environment:
       - SPRING_DATASOURCE_URL=jdbc:postgresql:ewm-db:5431/ewm-db
-      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_USERNAME=ru.practicum.user
       - SPRING_DATASOURCE_PASSWORD=pass
 
   ewm-db:
@@ -43,5 +43,5 @@ services:
       - "6542:5431"
     environment:
       - POSTGRES_DB=ewmbase
-      - POSTGRES_USER=user
+      - POSTGRES_USER=ru.practicum.user
       - POSTGRES_PASSWORD=pass
