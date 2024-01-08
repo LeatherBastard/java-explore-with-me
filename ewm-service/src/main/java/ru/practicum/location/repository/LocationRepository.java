@@ -1,0 +1,16 @@
+package ru.practicum.location.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import ru.practicum.location.model.Location;
+
+import java.util.Optional;
+
+public interface LocationRepository extends JpaRepository<Location, Integer> {
+    @Query("select new ru.practicum.location.model.Location(l.id,l.latitude,l.longitude) " +
+            "FROM Location as l " +
+            "WHERE l.latitude=:latitude AND l.longitude=:longitude")
+    Optional<Location> findLocationByLatitudeAndLongitude(@Param("latitude") float latitude, @Param("longitude") float longitude);
+
+}
