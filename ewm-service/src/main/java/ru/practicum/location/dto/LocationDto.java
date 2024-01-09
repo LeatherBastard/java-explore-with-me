@@ -12,7 +12,7 @@ import javax.validation.constraints.NotNull;
 @Builder
 public class LocationDto {
     @NotNull
-    private Float latitude;
+    private Float lat;
     @NotNull
-    private Float longitude;
+    private Float lon;
 }

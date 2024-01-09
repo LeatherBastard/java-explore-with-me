@@ -8,8 +8,13 @@ import ru.practicum.event.model.Event;
 import ru.practicum.location.dto.LocationDto;
 import ru.practicum.user.dto.UserShortDto;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Component
 public class EventMapper {
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     public EventFullDto mapToEventFullDto(Event event) {
         return EventFullDto.builder()
                 .annotation(event.getAnnotation())
@@ -20,9 +25,9 @@ public class EventMapper {
                                 .build()
                 )
                 .confirmedRequests(event.getConfirmedRequests())
-                .createdOn(event.getCreatedOn())
+                .createdOn(event.getCreatedOn().format(formatter))
                 .description(event.getDescription())
-                .eventDate(event.getEventDate())
+                .eventDate(event.getEventDate().format(formatter))
                 .id(event.getId())
                 .initiator(
                         UserShortDto.builder()
@@ -31,12 +36,12 @@ public class EventMapper {
                                 .build()
                 )
                 .location(LocationDto.builder()
-                        .latitude(event.getLocation().getLatitude())
-                        .longitude(event.getLocation().getLongitude())
+                        .lat(event.getLocation().getLatitude())
+                        .lon(event.getLocation().getLongitude())
                         .build())
                 .paid(event.getPaid())
                 .participantLimit(event.getParticipantLimit())
-                .publishedOn(event.getPublishedOn())
+                .publishedOn(event.getPublishedOn().format(formatter))
                 .requestModeration(event.getRequestModeration())
                 .state(event.getState())
                 .title(event.getTitle())
@@ -48,12 +53,11 @@ public class EventMapper {
         return Event.builder()
                 .annotation(eventDto.getAnnotation())
                 .description(eventDto.getDescription())
-                .eventDate(eventDto.getEventDate())
+                .eventDate(LocalDateTime.parse(eventDto.getEventDate(), formatter))
                 .paid(eventDto.getPaid())
                 .participantLimit(eventDto.getParticipantLimit())
                 .requestModeration(eventDto.getRequestModeration())
                 .title(eventDto.getTitle())
-                .views(eventDto.getViews())
                 .build();
     }
 }

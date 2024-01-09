@@ -20,11 +20,15 @@ import ru.practicum.user.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import static ru.practicum.category.service.CategoryServiceImpl.CATEGORY_NOT_FOUND_MESSAGE;
+import static ru.practicum.user.service.UserServiceImpl.USER_NOT_FOUND_MESSAGE;
+
 @Service
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
-    private final static String INITIATOR_NOT_FOUND_MESSAGE = "Initiator with id %d was not found";
-    private final static String CATEGORY_NOT_FOUND_MESSAGE = "Category with id %d was not found";
+
+
+    public final static String EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
 
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
@@ -36,21 +40,16 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto addEvent(int userId, NewEventDto eventDto) {
-        //@TODO
-        // Не парсит в NewEventDto строку с датой и временем в LocalDateTime
-        //Кроме того, вместо категории передаётся её айди
-        // смотри, как делаются запросы в свагере, там даже есть тип данный особенно в New event DTO
-
         Optional<User> optionalInitiator = userRepository.findById(userId);
         if (optionalInitiator.isEmpty())
-            throw new EntityNotFoundException(INITIATOR_NOT_FOUND_MESSAGE, userId);
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
         Optional<Category> optionalCategory = categoryRepository.findById(eventDto.getCategory());
         if (optionalCategory.isEmpty())
             throw new EntityNotFoundException(CATEGORY_NOT_FOUND_MESSAGE, userId);
         Optional<Location> optionalLocation = locationRepository
                 .findLocationByLatitudeAndLongitude(
-                        eventDto.getLocation().getLatitude(),
-                        eventDto.getLocation().getLongitude()
+                        eventDto.getLocation().getLat(),
+                        eventDto.getLocation().getLon()
                 );
         Location location;
         if (optionalLocation.isEmpty())
@@ -61,13 +60,15 @@ public class EventServiceImpl implements EventService {
         event.setInitiator(optionalInitiator.get());
         event.setCategory(optionalCategory.get());
         event.setLocation(location);
+        event.setCreatedOn(LocalDateTime.now());
         if (event.getRequestModeration()) {
             event.setState(EventState.PENDING);
         } else {
             event.setState(EventState.PUBLISHED);
             event.setPublishedOn(LocalDateTime.now());
-
         }
+        event.setConfirmedRequests(0);
+        event.setViews(0);
         return eventMapper.mapToEventFullDto(eventRepository.save(event));
     }
 }

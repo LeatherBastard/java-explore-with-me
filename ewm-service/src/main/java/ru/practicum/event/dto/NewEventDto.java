@@ -1,18 +1,13 @@
 package ru.practicum.event.dto;
 
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
-import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.location.dto.LocationDto;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -28,7 +23,7 @@ public class NewEventDto {
     @NotBlank
     private String description;
     @NotNull
-    private LocalDateTime eventDate;
+    private String eventDate;
     @NotNull
     private LocationDto location;
     @NotNull
@@ -40,6 +35,4 @@ public class NewEventDto {
     @NotNull
     @NotBlank
     private String title;
-    @NotNull
-    private Integer views;
 }

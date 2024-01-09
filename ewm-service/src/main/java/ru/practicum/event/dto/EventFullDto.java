@@ -23,11 +23,11 @@ public class EventFullDto {
 
     private Integer confirmedRequests;
 
-    private LocalDateTime createdOn;
+    private String createdOn;
 
     private String description;
 
-    private LocalDateTime eventDate;
+    private String eventDate;
 
     private Integer id;
 
@@ -39,7 +39,7 @@ public class EventFullDto {
 
     private Integer participantLimit;
 
-    private LocalDateTime publishedOn;
+    private String publishedOn;
 
     private Boolean requestModeration;
 

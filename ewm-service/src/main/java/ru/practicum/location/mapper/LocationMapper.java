@@ -8,15 +8,15 @@ import ru.practicum.location.dto.LocationDto;
 public class LocationMapper {
     public LocationDto mapToLocationDto(Location location) {
         return LocationDto.builder()
-                .latitude(location.getLatitude())
-                .longitude(location.getLongitude())
+                .lat(location.getLatitude())
+                .lon(location.getLongitude())
                 .build();
     }
 
     public Location mapToLocation(LocationDto locationDto) {
         return Location.builder()
-                .latitude(locationDto.getLatitude())
-                .longitude(locationDto.getLongitude())
+                .latitude(locationDto.getLat())
+                .longitude(locationDto.getLon())
                 .build();
     }
 }
