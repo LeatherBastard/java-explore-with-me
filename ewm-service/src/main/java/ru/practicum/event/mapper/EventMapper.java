@@ -16,7 +16,7 @@ public class EventMapper {
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public EventFullDto mapToEventFullDto(Event event) {
-        return EventFullDto.builder()
+        EventFullDto eventFullDto = EventFullDto.builder()
                 .annotation(event.getAnnotation())
                 .category(
                         CategoryDto.builder()
@@ -41,12 +41,15 @@ public class EventMapper {
                         .build())
                 .paid(event.getPaid())
                 .participantLimit(event.getParticipantLimit())
-                .publishedOn(event.getPublishedOn().format(formatter))
                 .requestModeration(event.getRequestModeration())
                 .state(event.getState())
                 .title(event.getTitle())
                 .views(event.getViews())
                 .build();
+        if (!event.getRequestModeration()) {
+            eventFullDto.setPublishedOn(event.getPublishedOn().format(formatter));
+        }
+        return eventFullDto;
     }
 
     public Event mapToEvent(NewEventDto eventDto) {

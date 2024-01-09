@@ -16,13 +16,18 @@ import ru.practicum.participationrequest.service.ParticipationRequestService;
 @RequiredArgsConstructor
 @Slf4j
 public class PrivateController {
+    private static final String LOGGER_ADD_EVENT_MESSAGE = "Adding event";
+    private static final String LOGGER_ADD_PARTICIPANT_REQUEST_MESSAGE = "Adding participant request";
+
     private final EventService eventService;
     private final ParticipationRequestService participationRequestService;
+
+
 
     @PostMapping("/{userId}/events")
     @ResponseStatus(HttpStatus.CREATED)
     public EventFullDto addEvent(@PathVariable("userId") int userId, @RequestBody @Validated NewEventDto eventDto) {
-        return eventService.addEvent(userId, eventDto);
+         return eventService.addEvent(userId, eventDto);
     }
 
     @PostMapping("/{userId}/requests")
