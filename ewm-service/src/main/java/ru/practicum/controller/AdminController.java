@@ -8,6 +8,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
+import ru.practicum.event.dto.EventFullDto;
+import ru.practicum.event.dto.UpdateEventAdminRequest;
+import ru.practicum.event.service.EventService;
 import ru.practicum.user.dto.UserDto;
 import ru.practicum.user.service.UserService;
 
@@ -26,8 +29,10 @@ public class AdminController {
     private static final String LOGGER_REMOVE_CATEGORY_MESSAGE = "Removing category with id: {}";
     private static final String LOGGER_UPDATE_CATEGORY_MESSAGE = "Updating category with id: {}";
 
+    private static final String LOGGER_UPDATE_ADMIN_EVENT_MESSAGE = "Updating event from admin with event id: {}";
     private final UserService userService;
     private final CategoryService categoryService;
+    private final EventService eventService;
 
 
     @PostMapping("/users")
@@ -68,6 +73,12 @@ public class AdminController {
     public CategoryDto updateCategory(@PathVariable("catId") int catId, @RequestBody CategoryDto category) {
         log.info(LOGGER_UPDATE_CATEGORY_MESSAGE, catId);
         return categoryService.update(catId, category);
+    }
+
+    @PatchMapping("/events/{eventId}")
+    public EventFullDto updateEvent(@PathVariable("eventId") int eventId, @RequestBody UpdateEventAdminRequest adminEventRequest) {
+        log.info(LOGGER_UPDATE_ADMIN_EVENT_MESSAGE, eventId);
+        return eventService.updateAdmin(eventId, adminEventRequest);
     }
 
 }

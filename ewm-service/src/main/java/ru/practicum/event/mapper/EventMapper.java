@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 
 @Component
 public class EventMapper {
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public EventFullDto mapToEventFullDto(Event event) {
         EventFullDto eventFullDto = EventFullDto.builder()
