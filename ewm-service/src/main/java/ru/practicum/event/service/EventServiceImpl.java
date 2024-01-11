@@ -21,9 +21,16 @@ import ru.practicum.location.repository.LocationRepository;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static ru.practicum.category.service.CategoryServiceImpl.CATEGORY_NOT_FOUND_MESSAGE;
 import static ru.practicum.event.mapper.EventMapper.formatter;
@@ -44,6 +51,8 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final LocationMapper locationMapper;
     private final EventMapper eventMapper;
+
+    private final EntityManager entityManager;
 
 
     @Override
@@ -69,16 +78,53 @@ public class EventServiceImpl implements EventService {
         event.setCategory(optionalCategory.get());
         event.setLocation(location);
         event.setCreatedOn(LocalDateTime.now());
-        if (event.getRequestModeration()) {
-            event.setState(EventState.PENDING);
-        } else {
-            event.setState(EventState.PUBLISHED);
-            event.setPublishedOn(LocalDateTime.now());
-        }
+        event.setState(EventState.PENDING);
         event.setConfirmedRequests(0);
         event.setViews(0);
         return eventMapper.mapToEventFullDto(eventRepository.save(event));
     }
+
+    @Override
+    public List<EventFullDto> getEvents(int userId, int from, int size) {
+        return eventRepository.getEvents(userId, from, size)
+                .stream()
+                .map(eventMapper::mapToEventFullDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<EventFullDto> findAllEvents(List<Integer> users, List<String> states, List<Integer> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Event> criteriaQuery = criteriaBuilder.createQuery(Event.class);
+        Root<Event> root = criteriaQuery.from(Event.class);
+
+        if (users != null) {
+            criteriaBuilder.isTrue(root.get("initiator").in(users));
+        }
+
+        if (states != null) {
+            criteriaBuilder.isTrue(root.get("state").in(states));
+        }
+
+        if (categories != null) {
+            criteriaBuilder.isTrue(root.get("category").in(categories));
+        }
+
+        if (rangeStart != null) {
+            criteriaBuilder.greaterThanOrEqualTo(root.get("eventDate"), rangeStart);
+        }
+        if (rangeEnd != null) {
+            criteriaBuilder.lessThanOrEqualTo(root.get("eventDate"), rangeEnd);
+        }
+
+        criteriaQuery.select(root);
+        TypedQuery<Event> query = entityManager.createQuery(criteriaQuery)
+                .setFirstResult(from)
+                .setMaxResults(size);
+        return query.getResultList().stream().map(eventMapper::mapToEventFullDto).collect(Collectors.toList());
+
+    }
+
 
     @Override
     public EventFullDto updateAdmin(int eventId, UpdateEventAdminRequest adminEventRequest) {
@@ -153,10 +199,7 @@ public class EventServiceImpl implements EventService {
         if (adminEventRequest.getTitle() != null) {
             oldEvent.setTitle(adminEventRequest.getTitle());
         }
-
-
         return eventMapper.mapToEventFullDto(eventRepository.save(oldEvent));
-
     }
 
 

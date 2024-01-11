@@ -5,6 +5,7 @@ import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.model.Event;
+import ru.practicum.event.model.EventState;
 import ru.practicum.location.dto.LocationDto;
 import ru.practicum.user.dto.UserShortDto;
 
@@ -46,7 +47,7 @@ public class EventMapper {
                 .title(event.getTitle())
                 .views(event.getViews())
                 .build();
-        if (!event.getRequestModeration()) {
+        if (event.getState().equals(EventState.PUBLISHED)) {
             eventFullDto.setPublishedOn(event.getPublishedOn().format(formatter));
         }
         return eventFullDto;

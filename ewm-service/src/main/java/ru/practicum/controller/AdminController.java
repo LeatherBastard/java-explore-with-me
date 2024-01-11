@@ -3,6 +3,7 @@ package ru.practicum.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +15,7 @@ import ru.practicum.event.service.EventService;
 import ru.practicum.user.dto.UserDto;
 import ru.practicum.user.service.UserService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -30,6 +32,9 @@ public class AdminController {
     private static final String LOGGER_UPDATE_CATEGORY_MESSAGE = "Updating category with id: {}";
 
     private static final String LOGGER_UPDATE_ADMIN_EVENT_MESSAGE = "Updating event from admin with event id: {}";
+    private static final String LOGGER_GET_EVENTS_MESSAGE = "Returning list of events for admin";
+
+
     private final UserService userService;
     private final CategoryService categoryService;
     private final EventService eventService;
@@ -80,5 +85,19 @@ public class AdminController {
         log.info(LOGGER_UPDATE_ADMIN_EVENT_MESSAGE, eventId);
         return eventService.updateAdmin(eventId, adminEventRequest);
     }
+
+    @GetMapping("/events")
+    public List<EventFullDto> getEvents(@RequestParam(required = false) List<Integer> users,
+                                        @RequestParam(required = false) List<String> states,
+                                        @RequestParam(required = false) List<Integer> categories,
+                                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
+                                        @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
+                                        @RequestParam(defaultValue = "0") int from,
+                                        @RequestParam(defaultValue = "10") int size) {
+        log.info(LOGGER_GET_EVENTS_MESSAGE);
+        return eventService.findAllEvents(users, states, categories, rangeStart, rangeEnd, from, size);
+
+    }
+
 
 }
