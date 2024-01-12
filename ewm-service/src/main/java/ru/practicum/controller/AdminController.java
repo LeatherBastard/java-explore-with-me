@@ -83,7 +83,7 @@ public class AdminController {
     @PatchMapping("/events/{eventId}")
     public EventFullDto updateEvent(@PathVariable("eventId") int eventId, @RequestBody UpdateEventAdminRequest adminEventRequest) {
         log.info(LOGGER_UPDATE_ADMIN_EVENT_MESSAGE, eventId);
-        return eventService.updateAdmin(eventId, adminEventRequest);
+        return eventService.updateEventByAdmin(eventId, adminEventRequest);
     }
 
     @GetMapping("/events")
@@ -95,7 +95,7 @@ public class AdminController {
                                         @RequestParam(defaultValue = "0") int from,
                                         @RequestParam(defaultValue = "10") int size) {
         log.info(LOGGER_GET_EVENTS_MESSAGE);
-        return eventService.findAllEvents(users, states, categories, rangeStart, rangeEnd, from, size);
+        return eventService.findAllEventsByAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
 
     }
 

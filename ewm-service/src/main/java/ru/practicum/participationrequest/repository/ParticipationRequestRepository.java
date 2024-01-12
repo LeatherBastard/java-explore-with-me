@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface ParticipationRequestRepository extends JpaRepository<ParticipationRequest, Integer> {
     List<ParticipationRequest> findByEvent_IdAndRequester_Id(int eventId, int requesterId);
+    List<ParticipationRequest> findByEvent_Id(int eventId);
+
 }

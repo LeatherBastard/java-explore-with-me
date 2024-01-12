@@ -7,12 +7,15 @@ import ru.practicum.category.repository.CategoryRepository;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.dto.UpdateEventAdminRequest;
+import ru.practicum.event.dto.UpdateEventUserRequest;
 import ru.practicum.event.mapper.EventMapper;
+import ru.practicum.event.model.AdminStateAction;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
+import ru.practicum.event.model.UserStateAction;
 import ru.practicum.event.repository.EventRepository;
 import ru.practicum.exception.EntityNotFoundException;
-import ru.practicum.exception.EventDateException;
+import ru.practicum.exception.EventUpdateDateException;
 import ru.practicum.exception.EventUpdateStateException;
 import ru.practicum.location.dto.LocationDto;
 import ru.practicum.location.mapper.LocationMapper;
@@ -40,10 +43,15 @@ import static ru.practicum.user.service.UserServiceImpl.USER_NOT_FOUND_MESSAGE;
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
 
-    private final static String ADMIN_STATE_ACTION_PUBLISH = "PUBLISH_EVENT";
-    private final static String ADMIN_STATE_ACTION_REJECT = "REJECT_EVENT";
     public final static String EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
-    public final static String EVENT_UPDATE_STATE_MESSAGE = "Cannot publish the event with id %d, because it's not in the right state: %s";
+    public final static String EVENT_ADMIN_UPDATE_DATE_MESSAGE = "Cannot publish event with id %d," +
+            "because event date has to be not earlier than hour before publication";
+
+    public final static String EVENT_USER_UPDATE_DATE_MESSAGE = "Cannot update event with id %d," +
+            "because event date has to be not earlier than two hours before publication";
+    public final static String USER_EVENT_NOT_FOUND_MESSAGE = "Event with id %d by user %d was not found";
+    public final static String EVENT_ADMIN_UPDATE_STATE_MESSAGE = "Cannot publish the event with id %d, because it's not in the right state: %s";
+    public final static String EVENT_USER_UPDATE_STATE_MESSAGE = "Cannot update the event with id %d, because it's not in the right state: %s";
 
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
@@ -85,7 +93,21 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventFullDto> getEvents(int userId, int from, int size) {
+    public EventFullDto findUserEventById(int userId, int eventId) {
+        Optional<User> optionalInitiator = userRepository.findById(userId);
+        if (optionalInitiator.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        Optional<Event> optionalEvent = eventRepository.findByInitiator_IdAndId(userId, eventId);
+        if (optionalEvent.isEmpty())
+            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId, userId);
+        return eventMapper.mapToEventFullDto(optionalEvent.get());
+    }
+
+    @Override
+    public List<EventFullDto> findAllUserEvents(int userId, int from, int size) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
         return eventRepository.getEvents(userId, from, size)
                 .stream()
                 .map(eventMapper::mapToEventFullDto)
@@ -93,7 +115,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventFullDto> findAllEvents(List<Integer> users, List<String> states, List<Integer> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+    public List<EventFullDto> findAllEventsByAdmin(List<Integer> users, List<String> states, List<Integer> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Event> criteriaQuery = criteriaBuilder.createQuery(Event.class);
         Root<Event> root = criteriaQuery.from(Event.class);
@@ -125,22 +147,100 @@ public class EventServiceImpl implements EventService {
 
     }
 
+    @Override
+    public EventFullDto updateEventByUser(int userId, int eventId, UpdateEventUserRequest userEventRequest) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        Optional<Event> optionalEvent = eventRepository.findByInitiator_IdAndId(userId, eventId);
+        if (optionalEvent.isEmpty())
+            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId, userId);
+        Event oldEvent = optionalEvent.get();
+
+        if (oldEvent.getState().equals(EventState.PUBLISHED)) {
+            throw new EventUpdateStateException(EVENT_USER_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
+        }
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        Duration duration = Duration.between(currentDateTime, oldEvent.getEventDate());
+        if (duration.toHours() < 2)
+            throw new EventUpdateDateException(EVENT_USER_UPDATE_DATE_MESSAGE, eventId);
+
+        if (userEventRequest.getAnnotation() != null) {
+            oldEvent.setAnnotation(userEventRequest.getAnnotation());
+        }
+        if (userEventRequest.getCategory() != null) {
+            Optional<Category> optionalCategory = categoryRepository.findById(userEventRequest.getCategory());
+            if (optionalCategory.isEmpty())
+                throw new EntityNotFoundException(CATEGORY_NOT_FOUND_MESSAGE, userEventRequest.getCategory());
+            oldEvent.setCategory(optionalCategory.get());
+        }
+        if (userEventRequest.getDescription() != null) {
+            oldEvent.setDescription(userEventRequest.getDescription());
+        }
+        if (userEventRequest.getEventDate() != null) {
+            oldEvent.setEventDate(LocalDateTime.parse(userEventRequest.getEventDate(), formatter));
+        }
+        if (userEventRequest.getLocation() != null) {
+            LocationDto locationDto = userEventRequest.getLocation();
+            Optional<Location> optionalLocation = locationRepository.
+                    findLocationByLatitudeAndLongitude(locationDto.getLat(), locationDto.getLon());
+            Location newLocation;
+            if (optionalLocation.isEmpty()) {
+                newLocation = locationRepository.save(
+                        Location.builder()
+                                .latitude(locationDto.getLat())
+                                .longitude(locationDto.getLon())
+                                .build()
+                );
+            } else {
+                newLocation = optionalLocation.get();
+            }
+            oldEvent.setLocation(newLocation);
+        }
+
+        if (userEventRequest.getPaid() != null) {
+            oldEvent.setPaid(userEventRequest.getPaid());
+        }
+
+        if (userEventRequest.getParticipantLimit() != null) {
+            oldEvent.setParticipantLimit(userEventRequest.getParticipantLimit());
+        }
+
+        if (userEventRequest.getRequestModeration() != null) {
+            oldEvent.setRequestModeration(userEventRequest.getRequestModeration());
+        }
+
+        if (userEventRequest.getStateAction() != null) {
+            if (userEventRequest.getStateAction().equals(UserStateAction.SEND_TO_REVIEW.name())) {
+                oldEvent.setState(EventState.PENDING);
+            } else {
+                oldEvent.setState(EventState.CANCELED);
+            }
+        }
+
+        if (userEventRequest.getTitle() != null) {
+            oldEvent.setTitle(userEventRequest.getTitle());
+        }
+        return eventMapper.mapToEventFullDto(eventRepository.save(oldEvent));
+
+    }
+
 
     @Override
-    public EventFullDto updateAdmin(int eventId, UpdateEventAdminRequest adminEventRequest) {
+    public EventFullDto updateEventByAdmin(int eventId, UpdateEventAdminRequest adminEventRequest) {
 
         Optional<Event> optionalEvent = eventRepository.findById(eventId);
         if (optionalEvent.isEmpty())
             throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
         Event oldEvent = optionalEvent.get();
         if (!oldEvent.getState().equals(EventState.PENDING)) {
-            throw new EventUpdateStateException(EVENT_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
+            throw new EventUpdateStateException(EVENT_ADMIN_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
         }
 
         LocalDateTime publishDate = LocalDateTime.now();
         Duration duration = Duration.between(publishDate, oldEvent.getEventDate());
         if (duration.toHours() < 1)
-            throw new EventDateException(eventId);
+            throw new EventUpdateDateException(EVENT_ADMIN_UPDATE_DATE_MESSAGE, eventId);
 
         if (adminEventRequest.getAnnotation() != null) {
             oldEvent.setAnnotation(adminEventRequest.getAnnotation());
@@ -188,7 +288,7 @@ public class EventServiceImpl implements EventService {
         }
 
         if (adminEventRequest.getStateAction() != null) {
-            if (adminEventRequest.getStateAction().equals(ADMIN_STATE_ACTION_PUBLISH)) {
+            if (adminEventRequest.getStateAction().equals(AdminStateAction.PUBLISH_EVENT.name())) {
                 oldEvent.setState(EventState.PUBLISHED);
                 oldEvent.setPublishedOn(LocalDateTime.now());
             } else {
