@@ -1,8 +1,11 @@
+DROP TABLE IF EXISTS compilations CASCADE;
 DROP TABLE IF EXISTS participation_requests CASCADE;
 DROP TABLE IF EXISTS events CASCADE;
+DROP TABLE IF EXISTS events_compilations;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS locations CASCADE;
+DROP TABLE IF EXISTS events_compilations CASCADE;
 
 
 CREATE TABLE users(
@@ -47,5 +50,17 @@ CREATE TABLE participation_requests(
     id INTEGER NOT NULL  GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     requester_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     status VARCHAR(9)
+);
+
+CREATE TABLE compilations(
+  id INTEGER NOT NULL  GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  title VARCHAR(50) NOT NULL,
+  pinned BOOLEAN NOT NULL
+);
+
+CREATE TABLE events_compilations(
+    compilation_id INTEGER NOT NULL REFERENCES compilations (id),
+    event_id INTEGER NOT NULL REFERENCES events (id),
+    UNIQUE (compilation_id, event_id)
 );
 

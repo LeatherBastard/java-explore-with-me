@@ -17,6 +17,7 @@ import ru.practicum.event.repository.EventRepository;
 import ru.practicum.exception.EntityNotFoundException;
 import ru.practicum.exception.EventUpdateDateException;
 import ru.practicum.exception.EventUpdateStateException;
+import ru.practicum.exception.EventWrongStateException;
 import ru.practicum.location.dto.LocationDto;
 import ru.practicum.location.mapper.LocationMapper;
 import ru.practicum.location.model.Location;
@@ -92,6 +93,17 @@ public class EventServiceImpl implements EventService {
         return eventMapper.mapToEventFullDto(eventRepository.save(event));
     }
 
+    public EventFullDto getById(int id) {
+        Optional<Event> optionalEvent = eventRepository.findById(id);
+        if (optionalEvent.isEmpty())
+            throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, id);
+        Event event = optionalEvent.get();
+        if (!event.getState().equals(EventState.PUBLISHED)) {
+            throw new EventWrongStateException(id, event.getState().name());
+        }
+        return eventMapper.mapToEventFullDto(event);
+    }
+
     @Override
     public EventFullDto findUserEventById(int userId, int eventId) {
         Optional<User> optionalInitiator = userRepository.findById(userId);
@@ -104,7 +116,81 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public List<EventFullDto> findAllUserEvents(int userId, int from, int size) {
+    public List<EventFullDto> findAllEvents(String text,
+                                            List<Integer> categories,
+                                            Boolean paid,
+                                            LocalDateTime rangeStart,
+                                            LocalDateTime rangeEnd,
+                                            Boolean onlyAvailable,
+                                            String sort,
+                                            int from,
+                                            int size) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Event> criteriaQuery = criteriaBuilder.createQuery(Event.class);
+        Root<Event> root = criteriaQuery.from(Event.class);
+
+        criteriaBuilder.equal(root.get("state"), EventState.PUBLISHED);
+
+        if (text != null) {
+            criteriaBuilder.like(
+                    criteriaBuilder.lower(root.<String>get("annotation")),
+                    "%" + text.toLowerCase() + "%"
+            );
+            criteriaBuilder.like(
+                    criteriaBuilder.lower(root.<String>get("description")),
+                    "%" + text.toLowerCase() + "%"
+            );
+        }
+
+        if (categories != null) {
+            criteriaBuilder.isTrue(root.get("category").in(categories));
+        }
+
+        if (paid != null) {
+            if (paid) {
+                criteriaBuilder.isTrue(root.get("paid"));
+            } else {
+                criteriaBuilder.isFalse(root.get("paid"));
+            }
+        }
+
+        if (rangeStart != null && rangeEnd != null) {
+            criteriaBuilder.greaterThanOrEqualTo(root.get("eventDate"), rangeStart);
+            criteriaBuilder.lessThanOrEqualTo(root.get("eventDate"), rangeEnd);
+        } else {
+            criteriaBuilder.greaterThan(root.get("eventDate"), LocalDateTime.now());
+        }
+
+        if (onlyAvailable) {
+            criteriaBuilder.lessThan(root.get("confirmedRequests"), root.get("participantLimit"));
+        }
+
+        if (sort != null) {
+            if (sort.equals("EVENT_DATE")) {
+                criteriaBuilder.asc(root.get("eventDate"));
+            }
+            if (sort.equals("VIEWS")) {
+                criteriaBuilder.asc(root.get("views"));
+            }
+        }
+
+        criteriaQuery.select(root);
+        TypedQuery<Event> query = entityManager.createQuery(criteriaQuery)
+                .setFirstResult(from)
+                .setMaxResults(size);
+
+        return query.getResultList().
+
+                stream().
+
+                map(eventMapper::mapToEventFullDto).
+
+                collect(Collectors.toList());
+
+    }
+
+    @Override
+    public List<EventFullDto> findAllEventsByUser(int userId, int from, int size) {
         Optional<User> optionalUser = userRepository.findById(userId);
         if (optionalUser.isEmpty())
             throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);

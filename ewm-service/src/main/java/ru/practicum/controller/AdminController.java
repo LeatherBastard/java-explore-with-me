@@ -9,6 +9,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
+import ru.practicum.compilation.dto.CompilationDto;
+import ru.practicum.compilation.dto.NewCompilationDto;
+import ru.practicum.compilation.service.CompilationService;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.UpdateEventAdminRequest;
 import ru.practicum.event.service.EventService;
@@ -34,11 +37,13 @@ public class AdminController {
     private static final String LOGGER_UPDATE_ADMIN_EVENT_MESSAGE = "Updating event from admin with event id: {}";
     private static final String LOGGER_GET_EVENTS_MESSAGE = "Returning list of events for admin";
 
+    private static final String LOGGER_ADD_COMPILATION_MESSAGE = "Adding compilation";
+
 
     private final UserService userService;
     private final CategoryService categoryService;
     private final EventService eventService;
-
+    private final CompilationService compilationService;
 
     @PostMapping("/users")
     @ResponseStatus(HttpStatus.CREATED)
@@ -96,7 +101,14 @@ public class AdminController {
                                         @RequestParam(defaultValue = "10") int size) {
         log.info(LOGGER_GET_EVENTS_MESSAGE);
         return eventService.findAllEventsByAdmin(users, states, categories, rangeStart, rangeEnd, from, size);
+    }
 
+
+    @PostMapping("/compilations")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CompilationDto addCompilation(@RequestBody NewCompilationDto compilation) {
+        log.info(LOGGER_ADD_COMPILATION_MESSAGE);
+        return compilationService.add(compilation);
     }
 
 

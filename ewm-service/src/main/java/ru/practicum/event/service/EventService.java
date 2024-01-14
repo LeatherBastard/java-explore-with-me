@@ -11,9 +11,21 @@ import java.util.List;
 public interface EventService {
     EventFullDto addEvent(int userId, NewEventDto eventDto);
 
+    EventFullDto getById(int id);
+
     EventFullDto findUserEventById(int userId, int eventId);
 
-    List<EventFullDto> findAllUserEvents(int userId, int from, int size);
+    List<EventFullDto> findAllEvents(String text,
+                                     List<Integer> categories,
+                                     Boolean paid,
+                                     LocalDateTime rangeStart,
+                                     LocalDateTime rangeEnd,
+                                     Boolean onlyAvailable,
+                                     String sort,
+                                     int from,
+                                     int size);
+
+    List<EventFullDto> findAllEventsByUser(int userId, int from, int size);
 
     List<EventFullDto> findAllEventsByAdmin(List<Integer> users, List<String> states, List<Integer> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size);
 

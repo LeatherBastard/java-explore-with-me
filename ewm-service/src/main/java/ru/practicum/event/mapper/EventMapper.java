@@ -3,6 +3,7 @@ package ru.practicum.event.mapper;
 import org.springframework.stereotype.Component;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.event.dto.EventFullDto;
+import ru.practicum.event.dto.EventShortDto;
 import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
@@ -15,6 +16,30 @@ import java.time.format.DateTimeFormatter;
 @Component
 public class EventMapper {
     public static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    public EventShortDto mapToEventShortDto(Event event) {
+        return EventShortDto.builder()
+                .annotation(event.getAnnotation())
+                .category(
+                        CategoryDto.builder()
+                                .id(event.getCategory().getId())
+                                .name(event.getCategory().getName())
+                                .build()
+                )
+                .confirmedRequests(event.getConfirmedRequests())
+                .eventDate(event.getEventDate().format(formatter))
+                .id(event.getId())
+                .initiator(
+                        UserShortDto.builder()
+                                .id(event.getInitiator().getId())
+                                .name(event.getInitiator().getName())
+                                .build()
+                )
+                .paid(event.getPaid())
+                .title(event.getTitle())
+                .views(event.getViews())
+                .build();
+    }
 
     public EventFullDto mapToEventFullDto(Event event) {
         EventFullDto eventFullDto = EventFullDto.builder()
