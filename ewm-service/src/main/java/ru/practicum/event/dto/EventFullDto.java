@@ -9,8 +9,6 @@ import ru.practicum.event.model.EventState;
 import ru.practicum.location.dto.LocationDto;
 import ru.practicum.user.dto.UserShortDto;
 
-import java.time.LocalDateTime;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

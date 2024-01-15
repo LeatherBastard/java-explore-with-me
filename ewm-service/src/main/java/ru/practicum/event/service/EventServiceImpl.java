@@ -40,17 +40,17 @@ import static ru.practicum.user.service.UserServiceImpl.USER_NOT_FOUND_MESSAGE;
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
 
-    public final static String EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
-    public final static String EVENT_ADMIN_UPDATE_DATE_MESSAGE = "Cannot publish event with id %d," +
+    public static final String EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
+    public static final String EVENT_ADMIN_UPDATE_DATE_MESSAGE = "Cannot publish event with id %d," +
             "because event date has to be not earlier than hour before publication";
 
-    public final static String EVENT_USER_UPDATE_DATE_MESSAGE = "Cannot update event with id %d," +
+    public static final String EVENT_USER_UPDATE_DATE_MESSAGE = "Cannot update event with id %d," +
             "because event date has to be not earlier than two hours before publication";
 
-    public final static String EVENT_DATE_BEFORE_CURRENT_MESSAGE = "Cannot publish event with id %d," +
+    public static final String EVENT_DATE_BEFORE_CURRENT_MESSAGE = "Cannot publish event with id %d," +
             "because event date is before current time";
-    public final static String USER_EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
-    public final static String EVENT_UPDATE_STATE_MESSAGE = "Cannot update the event with id %d, because it's not in the right state: %s";
+    public static final String USER_EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
+    public static final String EVENT_UPDATE_STATE_MESSAGE = "Cannot update the event with id %d, because it's not in the right state: %s";
 
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
@@ -152,11 +152,11 @@ public class EventServiceImpl implements EventService {
 
         if (text != null) {
             Predicate likeInAnnotation = criteriaBuilder.like(
-                    criteriaBuilder.lower(root.<String>get("annotation")),
+                    criteriaBuilder.lower(root.get("annotation")),
                     "%" + text.toLowerCase() + "%"
             );
             Predicate likeInDescription = criteriaBuilder.like(
-                    criteriaBuilder.lower(root.<String>get("description")),
+                    criteriaBuilder.lower(root.get("description")),
                     "%" + text.toLowerCase() + "%"
             );
             predicates.add(criteriaBuilder.or(likeInAnnotation, likeInDescription));

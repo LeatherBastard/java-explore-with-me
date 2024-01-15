@@ -61,7 +61,7 @@ public class CategoryServiceImpl implements CategoryService {
         Optional<Category> optionalCategory = repository.findByName(category.getName());
         if (optionalCategory.isPresent() && optionalCategory.get().getId() != catId)
             throw new CategoryNameOccupiedException(category.getName());
-        Category oldCategory = mapper.mapToCategory(getById(catId));
+        mapper.mapToCategory(getById(catId));
         return mapper.mapToCategoryDto(repository.save(mapper.mapToCategory(category)));
     }
 
