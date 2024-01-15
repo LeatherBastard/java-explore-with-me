@@ -11,6 +11,7 @@ import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.dto.NewCompilationDto;
+import ru.practicum.compilation.dto.UpdateCompilationRequest;
 import ru.practicum.compilation.service.CompilationService;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.UpdateEventAdminRequest;
@@ -108,7 +109,7 @@ public class AdminController {
 
     @PostMapping("/compilations")
     @ResponseStatus(HttpStatus.CREATED)
-    public CompilationDto addCompilation(@RequestBody NewCompilationDto compilation) {
+    public CompilationDto addCompilation(@RequestBody @Validated NewCompilationDto compilation) {
         log.info(LOGGER_ADD_COMPILATION_MESSAGE);
         return compilationService.add(compilation);
     }
@@ -121,7 +122,7 @@ public class AdminController {
     }
 
     @PatchMapping("/compilations/{compId}")
-    public CompilationDto updateCompilation(@PathVariable("compId") int compId, @RequestBody NewCompilationDto compilation) {
+    public CompilationDto updateCompilation(@PathVariable("compId") int compId, @RequestBody @Validated UpdateCompilationRequest compilation) {
         log.info(LOGGER_UPDATE_COMPILATION_MESSAGE, compId);
         return compilationService.update(compId, compilation);
     }

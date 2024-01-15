@@ -21,4 +21,6 @@ public interface EventRepository extends JpaRepository<Event, Integer> {
                           @Param("size") int size);
 
     Optional<Event> findByInitiator_IdAndId(int userId, int eventId);
+
+    List<Event> findByCategory_Id(int categoryId);
 }

@@ -50,8 +50,7 @@ public class EventServiceImpl implements EventService {
     public final static String EVENT_DATE_BEFORE_CURRENT_MESSAGE = "Cannot publish event with id %d," +
             "because event date is before current time";
     public final static String USER_EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
-    public final static String EVENT_ADMIN_UPDATE_STATE_MESSAGE = "Cannot publish the event with id %d, because it's not in the right state: %s";
-    public final static String EVENT_USER_UPDATE_STATE_MESSAGE = "Cannot update the event with id %d, because it's not in the right state: %s";
+    public final static String EVENT_UPDATE_STATE_MESSAGE = "Cannot update the event with id %d, because it's not in the right state: %s";
 
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
@@ -266,7 +265,7 @@ public class EventServiceImpl implements EventService {
         Event oldEvent = optionalEvent.get();
 
         if (oldEvent.getState().equals(EventState.PUBLISHED)) {
-            throw new EventUpdateStateException(EVENT_USER_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
+            throw new EventUpdateStateException(EVENT_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
         }
         LocalDateTime currentDateTime = LocalDateTime.now();
         Duration duration = Duration.between(currentDateTime, oldEvent.getEventDate());
@@ -333,7 +332,6 @@ public class EventServiceImpl implements EventService {
             oldEvent.setTitle(userEventRequest.getTitle());
         }
         return eventMapper.mapToEventFullDto(eventRepository.save(oldEvent));
-
     }
 
 
@@ -345,7 +343,7 @@ public class EventServiceImpl implements EventService {
             throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
         Event oldEvent = optionalEvent.get();
         if (!oldEvent.getState().equals(EventState.PENDING)) {
-            throw new EventUpdateStateException(EVENT_ADMIN_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
+            throw new EventUpdateStateException(EVENT_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
         }
 
         LocalDateTime publishDate = LocalDateTime.now();

@@ -66,8 +66,64 @@ public class ErrorHandler {
 
 
     @ExceptionHandler
-    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleEventUpdateStateException(final EventUpdateStateException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
 
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleParticipationRequestExceedLimitException(final ParticipationRequestExceedLimitException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleParticipationRequestEventNotPublishedException(final ParticipationRequestEventNotPublishedException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleParticipationRequestAlreadyAddedException(final ParticipationRequestAlreadyAddedException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
+
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleParticipationRequestOwnerParticipantException(final ParticipationRequestOwnerParticipantException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleUserEmailOccupiedException(final UserEmailOccupiedException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleCategoryNameOccupiedException(final CategoryNameOccupiedException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleCategoryRelatedEventsException(final CategoryRelatedEventsException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleEntityNotFoundException(final EntityNotFoundException exception) {
         return new ApiError(NOT_FOUND_STATUS, NOT_FOUND_REASON, exception.getMessage(), LocalDateTime.now());
     }

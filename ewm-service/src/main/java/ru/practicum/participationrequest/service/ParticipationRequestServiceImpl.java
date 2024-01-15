@@ -69,11 +69,22 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .event(event)
                 .requester(optionalUser.get())
                 .build();
-
+        boolean confirmedRequest = false;
         if (event.getRequestModeration()) {
-            participationRequest.setStatus(RequestStatus.PENDING);
+            if (event.getParticipantLimit() > 0)
+                participationRequest.setStatus(RequestStatus.PENDING);
+            else {
+                participationRequest.setStatus(RequestStatus.CONFIRMED);
+                confirmedRequest = true;
+            }
         } else {
             participationRequest.setStatus(RequestStatus.CONFIRMED);
+            confirmedRequest = true;
+        }
+
+        if (confirmedRequest) {
+            event.setConfirmedRequests(event.getConfirmedRequests() + 1);
+            eventRepository.save(event);
         }
         return mapper.mapToParticipationRequestDto(repository.save(participationRequest));
     }
@@ -86,8 +97,15 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         Optional<ParticipationRequest> optionalParticipationRequest = repository.findById(requestId);
         if (optionalParticipationRequest.isEmpty())
             throw new EntityNotFoundException(PARTICIPATION_REQUEST_NOT_FOUND_MESSAGE, requestId);
+        int eventId = optionalParticipationRequest.get().getEvent().getId();
+        Optional<Event> optionalEvent = eventRepository.findById(eventId);
+        if (optionalEvent.isEmpty())
+            throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
+        Event event = optionalEvent.get();
         ParticipationRequest request = optionalParticipationRequest.get();
         request.setStatus(RequestStatus.CANCELED);
+        event.setConfirmedRequests(event.getConfirmedRequests() - 1);
+        eventRepository.save(event);
         return mapper.mapToParticipationRequestDto(repository.save(request));
     }
 
@@ -140,53 +158,36 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
                 .rejectedRequests(new ArrayList<>())
                 .build();
 
-        if (event.getRequestModeration()
-                || event.getParticipantLimit() == 0
-                || requestStatusUpdateRequest.getStatus().equals(RequestStatus.REJECTED)) {
-            saveRequestsStatus(RequestStatus.valueOf(requestStatusUpdateRequest.getStatus()), requests, result);
-        } else {
 
+        if (event.getConfirmedRequests().equals(event.getParticipantLimit()) && event.getParticipantLimit() > 0) {
+            throw new ParticipationRequestExceedLimitException(eventId, event.getParticipantLimit());
+        }
+        int confirmedRequests = 0;
+        for (ParticipationRequest request : requests) {
             if (event.getConfirmedRequests().equals(event.getParticipantLimit())) {
                 throw new ParticipationRequestExceedLimitException(eventId, event.getParticipantLimit());
-            }
-            for (ParticipationRequest request : requests) {
-
-                if (event.getConfirmedRequests().equals(event.getParticipantLimit())) {
-                    request.setStatus(RequestStatus.REJECTED);
-                    result.getRejectedRequests()
+            } else {
+                request.setStatus(RequestStatus.valueOf(requestStatusUpdateRequest.getStatus()));
+                if (request.getStatus().equals(RequestStatus.CONFIRMED)) {
+                    result.getConfirmedRequests()
                             .add(
                                     mapper.mapToParticipationRequestDto(repository.save(request))
                             );
+                    confirmedRequests++;
                 } else {
-                    request.setStatus(RequestStatus.valueOf(requestStatusUpdateRequest.getStatus()));
-                    result.getConfirmedRequests()
+                    result.getRejectedRequests()
                             .add(
                                     mapper.mapToParticipationRequestDto(repository.save(request))
                             );
                 }
             }
         }
-        return result;
-    }
-
-    private void saveRequestsStatus(RequestStatus status, List<ParticipationRequest> requests, EventRequestStatusUpdateResult result) {
-        requests.stream().forEach(request -> request.setStatus(status));
-
-        if (status.equals(RequestStatus.CONFIRMED)) {
-            for (ParticipationRequest request : requests) {
-                result.getConfirmedRequests()
-                        .add(
-                                mapper.mapToParticipationRequestDto(repository.save(request))
-                        );
-            }
-        } else {
-            for (ParticipationRequest request : requests) {
-                result.getRejectedRequests()
-                        .add(
-                                mapper.mapToParticipationRequestDto(repository.save(request))
-                        );
-            }
+        if (confirmedRequests > 0) {
+            event.setConfirmedRequests(event.getConfirmedRequests() + confirmedRequests);
+            eventRepository.save(event);
         }
 
+
+        return result;
     }
 }

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.dto.NewCompilationDto;
+import ru.practicum.compilation.dto.UpdateCompilationRequest;
 import ru.practicum.compilation.mapper.CompilationMapper;
 import ru.practicum.compilation.model.Compilation;
 import ru.practicum.compilation.repository.CompilationRepository;
@@ -41,11 +42,16 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     public CompilationDto add(NewCompilationDto compilationDto) {
         List<Event> events = new ArrayList<>();
-        for (Integer eventId : compilationDto.getEvents()) {
-            Optional<Event> optionalEvent = eventRepository.findById(eventId);
-            if (optionalEvent.isEmpty())
-                throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
-            events.add(optionalEvent.get());
+        if (compilationDto.getEvents() != null) {
+            for (Integer eventId : compilationDto.getEvents()) {
+                Optional<Event> optionalEvent = eventRepository.findById(eventId);
+                if (optionalEvent.isEmpty())
+                    throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
+                events.add(optionalEvent.get());
+            }
+        }
+        if (compilationDto.getPinned() == null) {
+            compilationDto.setPinned(false);
         }
         Compilation compilation = compilationMapper.mapToCompilation(compilationDto);
         compilation.setEvents(events);
@@ -103,7 +109,7 @@ public class CompilationServiceImpl implements CompilationService {
     }
 
     @Override
-    public CompilationDto update(int compId, NewCompilationDto compilationDto) {
+    public CompilationDto update(int compId, UpdateCompilationRequest compilationDto) {
         Optional<Compilation> optionalCompilation = compilationRepository.findById(compId);
         if (optionalCompilation.isEmpty())
             throw new EntityNotFoundException(COMPILATION_NOT_FOUND_MESSAGE, compId);
