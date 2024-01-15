@@ -26,11 +26,8 @@ public class NewEventDto {
     private String eventDate;
     @NotNull
     private LocationDto location;
-    @NotNull
     private Boolean paid;
-    @NotNull
     private Integer participantLimit;
-    @NotNull
     private Boolean requestModeration;
     @NotNull
     @NotBlank

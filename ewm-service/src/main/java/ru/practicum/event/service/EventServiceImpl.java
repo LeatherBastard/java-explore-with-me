@@ -14,10 +14,7 @@ import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
 import ru.practicum.event.model.UserStateAction;
 import ru.practicum.event.repository.EventRepository;
-import ru.practicum.exception.EntityNotFoundException;
-import ru.practicum.exception.EventUpdateDateException;
-import ru.practicum.exception.EventUpdateStateException;
-import ru.practicum.exception.EventWrongStateException;
+import ru.practicum.exception.*;
 import ru.practicum.location.dto.LocationDto;
 import ru.practicum.location.mapper.LocationMapper;
 import ru.practicum.location.model.Location;
@@ -27,11 +24,10 @@ import ru.practicum.user.repository.UserRepository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Root;
+import javax.persistence.criteria.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -50,7 +46,10 @@ public class EventServiceImpl implements EventService {
 
     public final static String EVENT_USER_UPDATE_DATE_MESSAGE = "Cannot update event with id %d," +
             "because event date has to be not earlier than two hours before publication";
-    public final static String USER_EVENT_NOT_FOUND_MESSAGE = "Event with id %d by user %d was not found";
+
+    public final static String EVENT_DATE_BEFORE_CURRENT_MESSAGE = "Cannot publish event with id %d," +
+            "because event date is before current time";
+    public final static String USER_EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
     public final static String EVENT_ADMIN_UPDATE_STATE_MESSAGE = "Cannot publish the event with id %d, because it's not in the right state: %s";
     public final static String EVENT_USER_UPDATE_STATE_MESSAGE = "Cannot update the event with id %d, because it's not in the right state: %s";
 
@@ -72,6 +71,10 @@ public class EventServiceImpl implements EventService {
         Optional<Category> optionalCategory = categoryRepository.findById(eventDto.getCategory());
         if (optionalCategory.isEmpty())
             throw new EntityNotFoundException(CATEGORY_NOT_FOUND_MESSAGE, userId);
+        if (LocalDateTime.parse(eventDto.getEventDate(), formatter).isBefore(LocalDateTime.now())) {
+            throw new EventDateException(EVENT_DATE_BEFORE_CURRENT_MESSAGE, 0);
+        }
+
         Optional<Location> optionalLocation = locationRepository
                 .findLocationByLatitudeAndLongitude(
                         eventDto.getLocation().getLat(),
@@ -82,6 +85,15 @@ public class EventServiceImpl implements EventService {
             location = locationRepository.save(locationMapper.mapToLocation(eventDto.getLocation()));
         else
             location = optionalLocation.get();
+        if (eventDto.getPaid() == null) {
+            eventDto.setPaid(false);
+        }
+        if (eventDto.getParticipantLimit() == null) {
+            eventDto.setParticipantLimit(0);
+        }
+        if (eventDto.getRequestModeration() == null) {
+            eventDto.setRequestModeration(true);
+        }
         Event event = eventMapper.mapToEvent(eventDto);
         event.setInitiator(optionalInitiator.get());
         event.setCategory(optionalCategory.get());
@@ -111,7 +123,7 @@ public class EventServiceImpl implements EventService {
             throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
         Optional<Event> optionalEvent = eventRepository.findByInitiator_IdAndId(userId, eventId);
         if (optionalEvent.isEmpty())
-            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId, userId);
+            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId);
         return eventMapper.mapToEventFullDto(optionalEvent.get());
     }
 
@@ -125,67 +137,75 @@ public class EventServiceImpl implements EventService {
                                             String sort,
                                             int from,
                                             int size) {
+        if (rangeStart != null && rangeEnd != null) {
+            if (rangeStart.isAfter(rangeEnd)) {
+                throw new EventWrongDateRangeException(rangeStart, rangeEnd);
+            }
+        }
+
         CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
         CriteriaQuery<Event> criteriaQuery = criteriaBuilder.createQuery(Event.class);
         Root<Event> root = criteriaQuery.from(Event.class);
 
-        criteriaBuilder.equal(root.get("state"), EventState.PUBLISHED);
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(criteriaBuilder.equal(root.get("state"), EventState.PUBLISHED));
 
         if (text != null) {
-            criteriaBuilder.like(
+            Predicate likeInAnnotation = criteriaBuilder.like(
                     criteriaBuilder.lower(root.<String>get("annotation")),
                     "%" + text.toLowerCase() + "%"
             );
-            criteriaBuilder.like(
+            Predicate likeInDescription = criteriaBuilder.like(
                     criteriaBuilder.lower(root.<String>get("description")),
                     "%" + text.toLowerCase() + "%"
             );
+            predicates.add(criteriaBuilder.or(likeInAnnotation, likeInDescription));
         }
 
+
         if (categories != null) {
-            criteriaBuilder.isTrue(root.get("category").in(categories));
+            predicates.add(criteriaBuilder.isTrue(root.get("category").in(categories)));
         }
 
         if (paid != null) {
             if (paid) {
-                criteriaBuilder.isTrue(root.get("paid"));
+                predicates.add(criteriaBuilder.isTrue(root.get("paid")));
             } else {
-                criteriaBuilder.isFalse(root.get("paid"));
+                predicates.add(criteriaBuilder.isFalse(root.get("paid")));
             }
         }
 
         if (rangeStart != null && rangeEnd != null) {
-            criteriaBuilder.greaterThanOrEqualTo(root.get("eventDate"), rangeStart);
-            criteriaBuilder.lessThanOrEqualTo(root.get("eventDate"), rangeEnd);
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("eventDate"), rangeStart));
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("eventDate"), rangeEnd));
         } else {
-            criteriaBuilder.greaterThan(root.get("eventDate"), LocalDateTime.now());
+            predicates.add(criteriaBuilder.greaterThan(root.get("eventDate"), LocalDateTime.now()));
         }
 
         if (onlyAvailable) {
-            criteriaBuilder.lessThan(root.get("confirmedRequests"), root.get("participantLimit"));
+            predicates.add(criteriaBuilder.lessThan(root.get("confirmedRequests"), root.get("participantLimit")));
         }
 
+        Order order = criteriaBuilder.asc(root.get("id"));
         if (sort != null) {
             if (sort.equals("EVENT_DATE")) {
-                criteriaBuilder.asc(root.get("eventDate"));
+                order = criteriaBuilder.asc(root.get("eventDate"));
             }
             if (sort.equals("VIEWS")) {
-                criteriaBuilder.asc(root.get("views"));
+                order = criteriaBuilder.asc(root.get("views"));
             }
         }
 
-        criteriaQuery.select(root);
+        criteriaQuery.select(root).where(predicates.toArray(new Predicate[predicates.size()])).orderBy(order);
         TypedQuery<Event> query = entityManager.createQuery(criteriaQuery)
                 .setFirstResult(from)
                 .setMaxResults(size);
 
-        return query.getResultList().
-
-                stream().
-
-                map(eventMapper::mapToEventFullDto).
-
-                collect(Collectors.toList());
+        return query.getResultList()
+                .stream()
+                .map(eventMapper::mapToEventFullDto)
+                .collect(Collectors.toList());
 
     }
 
@@ -206,26 +226,28 @@ public class EventServiceImpl implements EventService {
         CriteriaQuery<Event> criteriaQuery = criteriaBuilder.createQuery(Event.class);
         Root<Event> root = criteriaQuery.from(Event.class);
 
+        List<Predicate> predicates = new ArrayList<>();
         if (users != null) {
-            criteriaBuilder.isTrue(root.get("initiator").in(users));
+            predicates.add(criteriaBuilder.isTrue(root.get("initiator").in(users)));
         }
 
         if (states != null) {
-            criteriaBuilder.isTrue(root.get("state").in(states));
+            predicates.add(criteriaBuilder.isTrue(root.get("state").as(String.class).in(states)));
         }
 
         if (categories != null) {
-            criteriaBuilder.isTrue(root.get("category").in(categories));
+            predicates.add(criteriaBuilder.isTrue(root.get("category").in(categories)));
         }
 
         if (rangeStart != null) {
-            criteriaBuilder.greaterThanOrEqualTo(root.get("eventDate"), rangeStart);
-        }
-        if (rangeEnd != null) {
-            criteriaBuilder.lessThanOrEqualTo(root.get("eventDate"), rangeEnd);
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("eventDate"), rangeStart));
         }
 
-        criteriaQuery.select(root);
+        if (rangeEnd != null) {
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("eventDate"), rangeEnd));
+        }
+
+        criteriaQuery.select(root).where(predicates.toArray(new Predicate[predicates.size()]));
         TypedQuery<Event> query = entityManager.createQuery(criteriaQuery)
                 .setFirstResult(from)
                 .setMaxResults(size);
@@ -240,7 +262,7 @@ public class EventServiceImpl implements EventService {
             throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
         Optional<Event> optionalEvent = eventRepository.findByInitiator_IdAndId(userId, eventId);
         if (optionalEvent.isEmpty())
-            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId, userId);
+            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId);
         Event oldEvent = optionalEvent.get();
 
         if (oldEvent.getState().equals(EventState.PUBLISHED)) {
@@ -249,7 +271,7 @@ public class EventServiceImpl implements EventService {
         LocalDateTime currentDateTime = LocalDateTime.now();
         Duration duration = Duration.between(currentDateTime, oldEvent.getEventDate());
         if (duration.toHours() < 2)
-            throw new EventUpdateDateException(EVENT_USER_UPDATE_DATE_MESSAGE, eventId);
+            throw new EventDateException(EVENT_USER_UPDATE_DATE_MESSAGE, eventId);
 
         if (userEventRequest.getAnnotation() != null) {
             oldEvent.setAnnotation(userEventRequest.getAnnotation());
@@ -264,6 +286,9 @@ public class EventServiceImpl implements EventService {
             oldEvent.setDescription(userEventRequest.getDescription());
         }
         if (userEventRequest.getEventDate() != null) {
+            LocalDateTime eventDate = LocalDateTime.parse(userEventRequest.getEventDate(), formatter);
+            if (eventDate.isBefore(currentDateTime))
+                throw new EventDateException(EVENT_DATE_BEFORE_CURRENT_MESSAGE, eventId);
             oldEvent.setEventDate(LocalDateTime.parse(userEventRequest.getEventDate(), formatter));
         }
         if (userEventRequest.getLocation() != null) {
@@ -326,7 +351,7 @@ public class EventServiceImpl implements EventService {
         LocalDateTime publishDate = LocalDateTime.now();
         Duration duration = Duration.between(publishDate, oldEvent.getEventDate());
         if (duration.toHours() < 1)
-            throw new EventUpdateDateException(EVENT_ADMIN_UPDATE_DATE_MESSAGE, eventId);
+            throw new EventDateException(EVENT_ADMIN_UPDATE_DATE_MESSAGE, eventId);
 
         if (adminEventRequest.getAnnotation() != null) {
             oldEvent.setAnnotation(adminEventRequest.getAnnotation());
@@ -341,7 +366,10 @@ public class EventServiceImpl implements EventService {
             oldEvent.setDescription(adminEventRequest.getDescription());
         }
         if (adminEventRequest.getEventDate() != null) {
-            oldEvent.setEventDate(LocalDateTime.parse(adminEventRequest.getEventDate(), formatter));
+            LocalDateTime eventDate = LocalDateTime.parse(adminEventRequest.getEventDate(), formatter);
+            if (eventDate.isBefore(publishDate))
+                throw new EventDateException(EVENT_DATE_BEFORE_CURRENT_MESSAGE, eventId);
+            oldEvent.setEventDate(eventDate);
         }
         if (adminEventRequest.getLocation() != null) {
             LocationDto locationDto = adminEventRequest.getLocation();

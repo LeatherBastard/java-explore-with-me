@@ -7,6 +7,8 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
+import ru.practicum.compilation.dto.CompilationDto;
+import ru.practicum.compilation.service.CompilationService;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.service.EventService;
 
@@ -20,12 +22,14 @@ import java.util.List;
 public class PublicController {
     private static final String LOGGER_GET_CATEGORIES_MESSAGE = "Returning list of categories";
     private static final String LOGGER_GET_EVENTS_MESSAGE = "Returning list of events";
+    private static final String LOGGER_GET_COMPILATIONS_MESSAGE = "Returning list of compilations";
     private static final String LOGGER_GET_CATEGORY_BY_ID_MESSAGE = "Getting category with id: {}";
-
     private static final String LOGGER_GET_EVENT_BY_ID_MESSAGE = "Getting event with id: {}";
+    private static final String LOGGER_GET_COMPILATION_BY_ID_MESSAGE = "Getting compilation with id: {}";
 
     private final CategoryService categoryService;
     private final EventService eventService;
+    private final CompilationService compilationService;
 
     @GetMapping("/categories")
     public List<CategoryDto> findAllCategories(@RequestParam(defaultValue = "0") int from, @RequestParam(defaultValue = "10") int size) {
@@ -59,5 +63,20 @@ public class PublicController {
         log.info(LOGGER_GET_EVENT_BY_ID_MESSAGE, id);
         return eventService.getById(id);
     }
+
+    @GetMapping("/compilations")
+    public List<CompilationDto> findAllCompilations(@RequestParam(required = false) Boolean pinned,
+                                                    @RequestParam(defaultValue = "0") int from,
+                                                    @RequestParam(defaultValue = "10") int size) {
+        log.info(LOGGER_GET_COMPILATIONS_MESSAGE);
+        return compilationService.findAllCompilations(pinned, from, size);
+    }
+
+    @GetMapping("/compilations/{compId}")
+    public CompilationDto getCompilation(@PathVariable("compId") int compId) {
+        log.info(LOGGER_GET_COMPILATION_BY_ID_MESSAGE, compId);
+        return compilationService.getById(compId);
+    }
+
 
 }

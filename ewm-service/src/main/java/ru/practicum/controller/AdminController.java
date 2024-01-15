@@ -38,6 +38,8 @@ public class AdminController {
     private static final String LOGGER_GET_EVENTS_MESSAGE = "Returning list of events for admin";
 
     private static final String LOGGER_ADD_COMPILATION_MESSAGE = "Adding compilation";
+    private static final String LOGGER_REMOVE_COMPILATION_MESSAGE = "Removing compilation with id: {}";
+    private static final String LOGGER_UPDATE_COMPILATION_MESSAGE = "Updating compilation with id: {}";
 
 
     private final UserService userService;
@@ -86,7 +88,7 @@ public class AdminController {
     }
 
     @PatchMapping("/events/{eventId}")
-    public EventFullDto updateEvent(@PathVariable("eventId") int eventId, @RequestBody UpdateEventAdminRequest adminEventRequest) {
+    public EventFullDto updateEvent(@PathVariable("eventId") int eventId, @RequestBody @Validated UpdateEventAdminRequest adminEventRequest) {
         log.info(LOGGER_UPDATE_ADMIN_EVENT_MESSAGE, eventId);
         return eventService.updateEventByAdmin(eventId, adminEventRequest);
     }
@@ -111,5 +113,17 @@ public class AdminController {
         return compilationService.add(compilation);
     }
 
+    @DeleteMapping("/compilations/{compId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCompilation(@PathVariable("compId") int compId) {
+        log.info(LOGGER_REMOVE_COMPILATION_MESSAGE, compId);
+        compilationService.remove(compId);
+    }
+
+    @PatchMapping("/compilations/{compId}")
+    public CompilationDto updateCompilation(@PathVariable("compId") int compId, @RequestBody NewCompilationDto compilation) {
+        log.info(LOGGER_UPDATE_COMPILATION_MESSAGE, compId);
+        return compilationService.update(compId, compilation);
+    }
 
 }

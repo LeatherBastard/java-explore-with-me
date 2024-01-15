@@ -43,7 +43,9 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         Optional<Event> optionalEvent = eventRepository.findById(eventId);
         if (optionalEvent.isEmpty())
             throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
-        if (optionalEvent.get().getInitiator().getId() == userId) {
+
+        Event event = optionalEvent.get();
+        if (event.getInitiator().getId() == userId) {
             throw new ParticipationRequestOwnerParticipantException(eventId, userId);
         }
 
@@ -52,20 +54,23 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new ParticipationRequestAlreadyAddedException(eventId, userId);
         }
 
-        if (!optionalEvent.get().getState().equals(EventState.PUBLISHED)) {
+        if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new ParticipationRequestEventNotPublishedException(eventId);
         }
-        if (optionalEvent.get().getConfirmedRequests().equals(optionalEvent.get().getParticipantLimit())) {
-            throw new ParticipationRequestExceedLimitException(eventId, optionalEvent.get().getParticipantLimit());
+
+
+        if (event.getParticipantLimit() > 0
+                && event.getConfirmedRequests().equals(event.getParticipantLimit())) {
+            throw new ParticipationRequestExceedLimitException(eventId, event.getParticipantLimit());
         }
 
         ParticipationRequest participationRequest = ParticipationRequest.builder()
                 .created(LocalDateTime.now())
-                .event(optionalEvent.get())
+                .event(event)
                 .requester(optionalUser.get())
                 .build();
 
-        if (optionalEvent.get().getRequestModeration()) {
+        if (event.getRequestModeration()) {
             participationRequest.setStatus(RequestStatus.PENDING);
         } else {
             participationRequest.setStatus(RequestStatus.CONFIRMED);
