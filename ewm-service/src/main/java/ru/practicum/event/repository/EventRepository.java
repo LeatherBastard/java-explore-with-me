@@ -14,8 +14,7 @@ public interface EventRepository extends JpaRepository<Event, Integer> {
 
     @Query(value = "SELECT * FROM events WHERE " +
             "initiator_id=:userId " +
-            "LIMIT :size OFFSET :from "
-            , nativeQuery = true)
+            "LIMIT :size OFFSET :from ", nativeQuery = true)
     List<Event> getEvents(@Param("userId") int userId,
                           @Param("from") int from,
                           @Param("size") int size);

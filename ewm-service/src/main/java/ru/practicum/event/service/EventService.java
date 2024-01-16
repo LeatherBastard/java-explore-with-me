@@ -16,11 +16,13 @@ public interface EventService {
     EventFullDto findUserEventById(int userId,
                                    int eventId);
 
-    List<EventFullDto> findAllEvents(String text, List<Integer> categories, Boolean paid, LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable, String sort, int from, int size);
+    List<EventFullDto> findAllEvents(String text, List<Integer> categories, Boolean paid, LocalDateTime rangeStart,
+                                     LocalDateTime rangeEnd, Boolean onlyAvailable, String sort, int from, int size);
 
     List<EventFullDto> findAllEventsByUser(int userId, int from, int size);
 
-    List<EventFullDto> findAllEventsByAdmin(List<Integer> users, List<String> states, List<Integer> categories, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size);
+    List<EventFullDto> findAllEventsByAdmin(List<Integer> users, List<String> states, List<Integer> categories,
+                                            LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size);
 
     EventFullDto updateEventByUser(int userId, int eventId, UpdateEventUserRequest userEventRequest);
 
