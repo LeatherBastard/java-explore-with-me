@@ -122,14 +122,8 @@ public class EventServiceImpl implements EventService {
             throw new EventWrongStateException(id, event.getState().name());
         }
         ResponseEntity<Object> entityStats = statisticHttpClient.getStats(
-                LocalDateTime.now().minusYears(100),
-                LocalDateTime.now().plusYears(100), List.of(request.getRequestURI()), true);
-        try {
-            List<StatisticResponseDto> responseDtos = Arrays.asList(objectMapper.readValue(entityStats.getBody().toString()
-                    , StatisticResponseDto[].class));
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
+                LocalDateTime.now().minusYears(100).format(formatter),
+                LocalDateTime.now().plusYears(100).format(formatter), List.of(request.getRequestURI()), true);
 
 
         return eventMapper.mapToEventFullDto(event);

@@ -2,15 +2,15 @@ package ru.practicum.statistic.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriUtils;
 import ru.practicum.statistic.dto.StatisticRequestDto;
 import ru.practicum.statistic.dto.StatisticResponseDto;
 import ru.practicum.statistic.service.StatisticService;
 
-import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 
@@ -38,8 +38,11 @@ public class StatisticController {
 
     @GetMapping("/stats")
     @ResponseStatus(HttpStatus.OK)
-    public List<StatisticResponseDto> getStats(@RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime start, @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime end, @RequestParam(required = false) List<String> uris, @RequestParam(defaultValue = "false") boolean unique) {
+    public List<StatisticResponseDto> getStats(@RequestParam String start, @RequestParam String end, @RequestParam(required = false) List<String> uris, @RequestParam(defaultValue = "false") boolean unique) {
+        start = UriUtils.decode(start, StandardCharsets.UTF_8);
+        end = UriUtils.decode(end, StandardCharsets.UTF_8);
         log.info(LOGGER_GET_STATS_MESSAGE, start, end, uris, unique);
+
         return statisticService.getStats(start, end, uris, unique);
     }
 
