@@ -16,15 +16,15 @@ public interface EventService {
 
     EventFullDto findUserEventById(int userId, int eventId);
 
-    List<EventFullDto> findAllEvents(String text,
-                                     List<Integer> categories,
-                                     Boolean paid,
-                                     LocalDateTime rangeStart,
-                                     LocalDateTime rangeEnd,
-                                     Boolean onlyAvailable,
-                                     String sort,
-                                     int from,
-                                     int size);
+    List<EventFullDto> findAllEvents(String text
+            , List<Integer> categories
+            , Boolean paid
+            , LocalDateTime rangeStart
+            , LocalDateTime rangeEnd
+            , Boolean onlyAvailable
+            , String sort
+            , int from
+            , int size);
 
     List<EventFullDto> findAllEventsByUser(int userId, int from, int size);
 
