@@ -296,8 +296,8 @@ public class EventServiceImpl implements EventService {
         }
         if (userEventRequest.getLocation() != null) {
             LocationDto locationDto = userEventRequest.getLocation();
-            Optional<Location> optionalLocation = locationRepository.
-                    findLocationByLatitudeAndLongitude(locationDto.getLat(), locationDto.getLon());
+            Optional<Location> optionalLocation = locationRepository
+                    .findLocationByLatitudeAndLongitude(locationDto.getLat(), locationDto.getLon());
             Location newLocation;
             if (optionalLocation.isEmpty()) {
                 newLocation = locationRepository.save(
@@ -375,8 +375,8 @@ public class EventServiceImpl implements EventService {
         }
         if (adminEventRequest.getLocation() != null) {
             LocationDto locationDto = adminEventRequest.getLocation();
-            Optional<Location> optionalLocation = locationRepository.
-                    findLocationByLatitudeAndLongitude(locationDto.getLat(), locationDto.getLon());
+            Optional<Location> optionalLocation = locationRepository
+                    .findLocationByLatitudeAndLongitude(locationDto.getLat(), locationDto.getLon());
             Location newLocation;
             if (optionalLocation.isEmpty()) {
                 newLocation = locationRepository.save(
