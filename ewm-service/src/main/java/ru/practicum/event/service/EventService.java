@@ -12,7 +12,7 @@ import java.util.List;
 public interface EventService {
     EventFullDto addEvent(int userId, NewEventDto eventDto);
 
-    EventFullDto getById(int id, HttpServletRequest request);
+    EventFullDto getById(int id);
 
     EventFullDto findUserEventById(int userId, int eventId);
 

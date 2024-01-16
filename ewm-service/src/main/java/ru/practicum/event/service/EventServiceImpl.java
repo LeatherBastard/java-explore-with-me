@@ -106,7 +106,7 @@ public class EventServiceImpl implements EventService {
         return eventMapper.mapToEventFullDto(eventRepository.save(event));
     }
 
-    public EventFullDto getById(int id, HttpServletRequest request) {
+    public EventFullDto getById(int id) {
         Optional<Event> optionalEvent = eventRepository.findById(id);
         if (optionalEvent.isEmpty())
             throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, id);

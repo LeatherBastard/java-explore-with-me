@@ -78,8 +78,7 @@ public class PublicController {
     @GetMapping("/events/{id}")
     public EventFullDto getEvent(@PathVariable("id") int id, HttpServletRequest request) {
         log.info(LOGGER_GET_EVENT_BY_ID_MESSAGE, id);
-
-        EventFullDto event = eventService.getById(id, request);
+        EventFullDto event = eventService.getById(id);
         statisticHttpClient.addHit(StatisticRequestDto
                 .builder()
                 .app("ewm-main-service")
@@ -87,7 +86,6 @@ public class PublicController {
                 .ip(request.getRemoteAddr())
                 .timestamp(LocalDateTime.now().format(formatter))
                 .build());
-
         return event;
     }
 
