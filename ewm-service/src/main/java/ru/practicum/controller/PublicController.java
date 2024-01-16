@@ -78,7 +78,7 @@ public class PublicController {
     @GetMapping("/events/{id}")
     public EventFullDto getEvent(@PathVariable("id") int id, HttpServletRequest request) {
         log.info(LOGGER_GET_EVENT_BY_ID_MESSAGE, id);
-        EventFullDto event = eventService.getById(id);
+        EventFullDto event = eventService.getById(id, request);
         statisticHttpClient.addHit(StatisticRequestDto
                 .builder()
                 .app("ewm-main-service")

@@ -1,9 +1,12 @@
 package ru.practicum.event.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.practicum.category.model.Category;
 import ru.practicum.category.repository.CategoryRepository;
+import ru.practicum.client.statistic.StatisticHttpClient;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.dto.UpdateEventAdminRequest;
@@ -19,15 +22,18 @@ import ru.practicum.location.dto.LocationDto;
 import ru.practicum.location.mapper.LocationMapper;
 import ru.practicum.location.model.Location;
 import ru.practicum.location.repository.LocationRepository;
+import ru.practicum.statistic.dto.StatisticResponseDto;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.*;
+import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -61,6 +67,8 @@ public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
 
     private final EntityManager entityManager;
+    private final ObjectMapper objectMapper;
+    private final StatisticHttpClient statisticHttpClient;
 
 
     @Override
@@ -105,13 +113,22 @@ public class EventServiceImpl implements EventService {
         return eventMapper.mapToEventFullDto(eventRepository.save(event));
     }
 
-    public EventFullDto getById(int id) {
+    public EventFullDto getById(int id, HttpServletRequest request) {
         Optional<Event> optionalEvent = eventRepository.findById(id);
         if (optionalEvent.isEmpty())
             throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, id);
         Event event = optionalEvent.get();
         if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new EventWrongStateException(id, event.getState().name());
+        }
+        ResponseEntity<Object> entityStats = statisticHttpClient.getStats(
+                LocalDateTime.now().minusYears(100),
+                LocalDateTime.now().plusYears(100), List.of(request.getRequestURI()), true);
+        try {
+            List<StatisticResponseDto> responseDtos = Arrays.asList(objectMapper.readValue(entityStats.getBody().toString()
+                    , StatisticResponseDto[].class));
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
 
 
