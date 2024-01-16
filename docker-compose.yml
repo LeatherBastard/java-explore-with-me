@@ -42,6 +42,6 @@ services:
     ports:
       - "6542:5431"
     environment:
-      - POSTGRES_DB=ewmbase
+      - POSTGRES_DB=explore-with-me
       - POSTGRES_USER=ru.practicum.user
       - POSTGRES_PASSWORD=pass

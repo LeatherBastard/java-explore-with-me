@@ -5,13 +5,14 @@ import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.dto.UpdateEventAdminRequest;
 import ru.practicum.event.dto.UpdateEventUserRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface EventService {
     EventFullDto addEvent(int userId, NewEventDto eventDto);
 
-    EventFullDto getById(int id);
+    EventFullDto getById(int id, HttpServletRequest request);
 
     EventFullDto findUserEventById(int userId, int eventId);
 

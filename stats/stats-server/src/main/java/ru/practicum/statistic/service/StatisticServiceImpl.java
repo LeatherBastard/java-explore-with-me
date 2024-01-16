@@ -2,6 +2,7 @@ package ru.practicum.statistic.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.exception.StatisticEventException;
 import ru.practicum.statistic.dto.StatisticRequestDto;
 import ru.practicum.statistic.dto.StatisticResponseDto;
 import ru.practicum.statistic.mapper.StatisticMapper;
@@ -32,6 +33,10 @@ public class StatisticServiceImpl implements StatisticService {
 
     @Override
     public List<StatisticResponseDto> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
+
+        if (end.isBefore(start))
+            throw new StatisticEventException(start, end);
+
         List<StatisticView> result;
         if (unique) {
             if (uris == null) {

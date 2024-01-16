@@ -25,6 +25,7 @@ import ru.practicum.user.repository.UserRepository;
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.persistence.criteria.*;
+import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -56,6 +57,7 @@ public class EventServiceImpl implements EventService {
     private final LocationRepository locationRepository;
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
+
     private final LocationMapper locationMapper;
     private final EventMapper eventMapper;
 
@@ -104,7 +106,7 @@ public class EventServiceImpl implements EventService {
         return eventMapper.mapToEventFullDto(eventRepository.save(event));
     }
 
-    public EventFullDto getById(int id) {
+    public EventFullDto getById(int id, HttpServletRequest request) {
         Optional<Event> optionalEvent = eventRepository.findById(id);
         if (optionalEvent.isEmpty())
             throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, id);
@@ -112,6 +114,8 @@ public class EventServiceImpl implements EventService {
         if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new EventWrongStateException(id, event.getState().name());
         }
+
+
         return eventMapper.mapToEventFullDto(event);
     }
 

@@ -7,13 +7,18 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
+import ru.practicum.client.statistic.StatisticHttpClient;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.service.CompilationService;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.service.EventService;
+import ru.practicum.statistic.dto.StatisticRequestDto;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import static ru.practicum.event.mapper.EventMapper.formatter;
 
 @RestController
 @RequestMapping(path = "/")
@@ -30,6 +35,7 @@ public class PublicController {
     private final CategoryService categoryService;
     private final EventService eventService;
     private final CompilationService compilationService;
+    private final StatisticHttpClient statisticHttpClient;
 
     @GetMapping("/categories")
     public List<CategoryDto> findAllCategories(@RequestParam(defaultValue = "0") int from, @RequestParam(defaultValue = "10") int size) {
@@ -53,15 +59,36 @@ public class PublicController {
                                             @RequestParam(defaultValue = "false") Boolean onlyAvailable,
                                             @RequestParam(required = false) String sort,
                                             @RequestParam(defaultValue = "0") int from,
-                                            @RequestParam(defaultValue = "10") int size) {
+                                            @RequestParam(defaultValue = "10") int size,
+                                            HttpServletRequest request) {
         log.info(LOGGER_GET_EVENTS_MESSAGE);
-        return eventService.findAllEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+
+        List<EventFullDto> events = eventService.findAllEvents(text, categories, paid, rangeStart, rangeEnd, onlyAvailable, sort, from, size);
+
+        statisticHttpClient.addHit(StatisticRequestDto
+                .builder()
+                .app("ewm-main-service")
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now().format(formatter))
+                .build());
+        return events;
     }
 
     @GetMapping("/events/{id}")
-    public EventFullDto getEvent(@PathVariable("id") int id) {
+    public EventFullDto getEvent(@PathVariable("id") int id, HttpServletRequest request) {
         log.info(LOGGER_GET_EVENT_BY_ID_MESSAGE, id);
-        return eventService.getById(id);
+
+        EventFullDto event = eventService.getById(id, request);
+        statisticHttpClient.addHit(StatisticRequestDto
+                .builder()
+                .app("ewm-main-service")
+                .uri(request.getRequestURI())
+                .ip(request.getRemoteAddr())
+                .timestamp(LocalDateTime.now().format(formatter))
+                .build());
+
+        return event;
     }
 
     @GetMapping("/compilations")
