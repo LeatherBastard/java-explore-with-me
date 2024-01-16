@@ -5,7 +5,6 @@ import ru.practicum.event.dto.NewEventDto;
 import ru.practicum.event.dto.UpdateEventAdminRequest;
 import ru.practicum.event.dto.UpdateEventUserRequest;
 
-import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,7 +13,8 @@ public interface EventService {
 
     EventFullDto getById(int id);
 
-    EventFullDto findUserEventById(int userId, int eventId);
+    EventFullDto findUserEventById(int userId,
+                                   int eventId);
 
     List<EventFullDto> findAllEvents(String text, List<Integer> categories, Boolean paid, LocalDateTime rangeStart, LocalDateTime rangeEnd, Boolean onlyAvailable, String sort, int from, int size);
 
