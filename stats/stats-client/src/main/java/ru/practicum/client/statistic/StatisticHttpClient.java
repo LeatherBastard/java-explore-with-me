@@ -45,8 +45,8 @@ public class StatisticHttpClient {
 
         UriComponentsBuilder builder = UriComponentsBuilder.fromUri(URI.create("/stats"));
 
-        builder.queryParam("start", UriUtils.encode(start, StandardCharsets.UTF_8));
-        builder.queryParam("end",UriUtils.encode(end, StandardCharsets.UTF_8));
+        builder.queryParam("start", start);
+        builder.queryParam("end",start);
 
         for (String uri : uris) {
             builder.queryParam("uris", uri);
