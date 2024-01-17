@@ -11,13 +11,9 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
 import ru.practicum.statistic.dto.StatisticRequestDto;
 
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +42,7 @@ public class StatisticHttpClient {
         UriComponentsBuilder builder = UriComponentsBuilder.fromUri(URI.create("/stats"));
 
         builder.queryParam("start", start);
-        builder.queryParam("end",start);
+        builder.queryParam("end", end);
 
         for (String uri : uris) {
             builder.queryParam("uris", uri);

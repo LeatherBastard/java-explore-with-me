@@ -1,6 +1,5 @@
 package ru.practicum.event.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -22,7 +21,6 @@ import ru.practicum.location.dto.LocationDto;
 import ru.practicum.location.mapper.LocationMapper;
 import ru.practicum.location.model.Location;
 import ru.practicum.location.repository.LocationRepository;
-import ru.practicum.statistic.dto.StatisticResponseDto;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
@@ -33,7 +31,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -67,7 +64,6 @@ public class EventServiceImpl implements EventService {
     private final EventMapper eventMapper;
 
     private final EntityManager entityManager;
-    private final ObjectMapper objectMapper;
     private final StatisticHttpClient statisticHttpClient;
 
 
@@ -121,10 +117,11 @@ public class EventServiceImpl implements EventService {
         if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new EventWrongStateException(id, event.getState().name());
         }
-        ResponseEntity<Object> entityStats = statisticHttpClient.getStats(
-                LocalDateTime.now().minusYears(100).format(formatter),
-                LocalDateTime.now().plusYears(100).format(formatter), List.of(request.getRequestURI()), true);
-
+        int hits = parseUniqueHitsNumber(request);
+        if (event.getViews() < hits) {
+            event.setViews(hits);
+            eventRepository.save(event);
+        }
 
         return eventMapper.mapToEventFullDto(event);
     }
@@ -428,5 +425,16 @@ public class EventServiceImpl implements EventService {
         return eventMapper.mapToEventFullDto(eventRepository.save(oldEvent));
     }
 
-
+    private Integer parseUniqueHitsNumber(HttpServletRequest request) {
+        ResponseEntity<Object> entityStats = statisticHttpClient.getStats(
+                LocalDateTime.now().minusYears(100).format(formatter),
+                LocalDateTime.now().plusYears(100).format(formatter), List.of(request.getRequestURI()), true);
+        String content = entityStats.getBody().toString();
+        int hits = 0;
+        if (content.length() > 2) {
+            String number = content.substring(content.lastIndexOf("=") + 1, content.lastIndexOf("}"));
+            hits = Integer.parseInt(number);
+        }
+        return hits;
+    }
 }
