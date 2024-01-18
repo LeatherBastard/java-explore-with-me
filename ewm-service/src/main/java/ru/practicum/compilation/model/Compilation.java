@@ -1,9 +1,6 @@
 package ru.practicum.compilation.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import ru.practicum.event.model.Event;
 
 import javax.persistence.*;
@@ -11,10 +8,11 @@ import javax.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
+@Setter
 @Entity
 @Table(name = "compilations", schema = "public")
 public class Compilation {

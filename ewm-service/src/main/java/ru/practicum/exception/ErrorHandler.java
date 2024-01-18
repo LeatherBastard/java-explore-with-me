@@ -130,6 +130,12 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleCompilationEventsNotFoundException(final CompilationEventsNotFoundException exception) {
+        return new ApiError(NOT_FOUND_STATUS, NOT_FOUND_REASON, exception.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleEventWrongStateException(final EventWrongStateException exception) {
         return new ApiError(NOT_FOUND_STATUS, NOT_FOUND_REASON, exception.getMessage(), LocalDateTime.now());
     }

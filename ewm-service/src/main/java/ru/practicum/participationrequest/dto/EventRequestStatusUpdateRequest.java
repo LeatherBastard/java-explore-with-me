@@ -1,16 +1,15 @@
 package ru.practicum.participationrequest.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
-@Data
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
+@Setter
 public class EventRequestStatusUpdateRequest {
     private List<Integer> requestIds;
     private String status;

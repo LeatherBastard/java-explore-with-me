@@ -1,25 +1,21 @@
 package ru.practicum.event.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import ru.practicum.location.dto.LocationDto;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
+@Setter
 public class NewEventDto {
-    @NotNull
     @NotBlank
     private String annotation;
     @NotNull
     private Integer category;
-    @NotNull
     @NotBlank
     private String description;
     @NotNull
@@ -29,7 +25,6 @@ public class NewEventDto {
     private Boolean paid;
     private Integer participantLimit;
     private Boolean requestModeration;
-    @NotNull
     @NotBlank
     private String title;
 }

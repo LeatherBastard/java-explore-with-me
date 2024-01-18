@@ -1,17 +1,15 @@
 package ru.practicum.event.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import ru.practicum.location.dto.LocationDto;
 
 import javax.validation.constraints.Size;
 
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
+@Setter
 public class UpdateEventUserRequest {
     @Size(min = 20, max = 2000)
     private String annotation;

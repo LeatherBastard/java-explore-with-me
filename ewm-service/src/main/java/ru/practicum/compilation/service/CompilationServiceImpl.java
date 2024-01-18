@@ -11,6 +11,7 @@ import ru.practicum.compilation.repository.CompilationRepository;
 import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.repository.EventRepository;
+import ru.practicum.exception.CompilationEventsNotFoundException;
 import ru.practicum.exception.EntityNotFoundException;
 
 import javax.persistence.EntityManager;
@@ -24,14 +25,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static ru.practicum.event.service.EventServiceImpl.EVENT_NOT_FOUND_MESSAGE;
-
 @Service
 @RequiredArgsConstructor
 public class CompilationServiceImpl implements CompilationService {
 
     public static final String COMPILATION_NOT_FOUND_MESSAGE = "Compilation with id %d not found";
-
+    public static final String EVENT_COMPILATION_NOT_FOUND_MESSAGE = "One of the events from compilation, was not found";
     private final EventRepository eventRepository;
     private final CompilationRepository compilationRepository;
     private final EventMapper eventMapper;
@@ -43,13 +42,12 @@ public class CompilationServiceImpl implements CompilationService {
     public CompilationDto add(NewCompilationDto compilationDto) {
         List<Event> events = new ArrayList<>();
         if (compilationDto.getEvents() != null) {
-            for (Integer eventId : compilationDto.getEvents()) {
-                Optional<Event> optionalEvent = eventRepository.findById(eventId);
-                if (optionalEvent.isEmpty())
-                    throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
-                events.add(optionalEvent.get());
-            }
+            events = eventRepository.findAllById(compilationDto.getEvents());
+            if (events.size() != compilationDto.getEvents().size())
+                throw new CompilationEventsNotFoundException(compilationDto.getEvents());
         }
+
+
         if (compilationDto.getPinned() == null) {
             compilationDto.setPinned(false);
         }
@@ -115,15 +113,14 @@ public class CompilationServiceImpl implements CompilationService {
             throw new EntityNotFoundException(COMPILATION_NOT_FOUND_MESSAGE, compId);
         Compilation oldCompilation = optionalCompilation.get();
         if (compilationDto.getEvents() != null) {
-            List<Event> events = new ArrayList<>();
-            for (Integer eventId : compilationDto.getEvents()) {
-                Optional<Event> optionalEvent = eventRepository.findById(eventId);
-                if (optionalEvent.isEmpty())
-                    throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
-                events.add(optionalEvent.get());
-            }
+            List<Event> events = eventRepository.findAllById(compilationDto.getEvents());
+            if (events.size() != compilationDto.getEvents().size())
+                throw new CompilationEventsNotFoundException(compilationDto.getEvents());
+
             oldCompilation.setEvents(events);
         }
+
+
         if (compilationDto.getPinned() != null) {
             oldCompilation.setPinned(compilationDto.getPinned());
         }

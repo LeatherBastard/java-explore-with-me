@@ -10,7 +10,6 @@ import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,8 +22,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDto addUser(UserDto userDto) {
-        Optional<User> optionalUser = repository.findByEmail(userDto.getEmail());
-        if (optionalUser.isPresent())
+        if (repository.findByEmail(userDto.getEmail()).isPresent())
             throw new UserEmailOccupiedException(userDto.getEmail());
         return mapper.mapToUserDto(repository.save(mapper.mapToUser(userDto)));
     }

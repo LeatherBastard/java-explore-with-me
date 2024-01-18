@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
 
-    @Query(value = "select * " +
+    @Query(value = "SELECT * " +
             "FROM categories AS c " +
             "ORDER BY c.id ASC " +
             "LIMIT :size OFFSET :from ", nativeQuery = true)

@@ -1,10 +1,7 @@
 package ru.practicum.event.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import ru.practicum.category.model.Category;
 import ru.practicum.compilation.model.Compilation;
 import ru.practicum.location.model.Location;
@@ -16,13 +13,18 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
+@Setter
 @Entity
 @Table(name = "events", schema = "public")
 public class Event {
+    @Column(name = "id")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
     @Column(name = "annotation", nullable = false, length = 2000)
     @Size(min = 20, max = 2000)
     private String annotation;
@@ -38,10 +40,6 @@ public class Event {
     private String description;
     @Column(name = "event_date", nullable = false)
     private LocalDateTime eventDate;
-    @Column(name = "id")
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
     @ManyToOne
     @JoinColumn(name = "initiator_id")
     private User initiator;

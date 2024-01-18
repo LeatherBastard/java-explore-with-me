@@ -1,14 +1,13 @@
 package ru.practicum.participationrequest.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
-@Data
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@Getter
+@Setter
 public class ParticipationRequestDto {
     private Integer id;
     private String created;

@@ -114,7 +114,9 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         Optional<User> optionalUser = userRepository.findById(userId);
         if (optionalUser.isEmpty())
             throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
-        return repository.findByRequester_Id(userId).stream().map(mapper::mapToParticipationRequestDto).collect(Collectors.toList());
+        return repository.findByRequester_Id(userId).stream()
+                .map(mapper::mapToParticipationRequestDto)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -128,11 +130,15 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         if (optionalEvent.get().getInitiator().getId() != userId) {
             throw new ParticipationRequestOwnerParticipantException(eventId, userId);
         }
-        return repository.findByEvent_Id(eventId).stream().map(mapper::mapToParticipationRequestDto).collect(Collectors.toList());
+        return repository.findByEvent_Id(eventId).stream()
+                .map(mapper::mapToParticipationRequestDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public EventRequestStatusUpdateResult updateUserEventParticipationRequests(int userId, int eventId, EventRequestStatusUpdateRequest requestStatusUpdateRequest) {
+    public EventRequestStatusUpdateResult updateUserEventParticipationRequests(int userId,
+                                                                               int eventId,
+                                                                               EventRequestStatusUpdateRequest requestStatusUpdateRequest) {
         Optional<User> optionalUser = userRepository.findById(userId);
         if (optionalUser.isEmpty())
             throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
