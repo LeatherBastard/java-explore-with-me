@@ -133,13 +133,12 @@ public class AdminController {
     @GetMapping("/comments")
     public List<CommentResponseDto> getComments(@RequestParam(required = false) List<Integer> users,
                                                 @RequestParam(required = false) List<Integer> events,
-                                                @RequestParam(required = false) List<String> states,
                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                                 @RequestParam(defaultValue = "0") int from,
                                                 @RequestParam(defaultValue = "10") int size) {
         log.info(LOGGER_GET_COMMENTS_MESSAGE);
-        return commentService.findAllCommentsByAdmin(users, events, states, rangeStart, rangeEnd, from, size);
+        return commentService.findAllCommentsByAdmin(users, events, rangeStart, rangeEnd, from, size);
     }
 
 }

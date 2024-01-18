@@ -103,11 +103,11 @@ public class PrivateController {
                 .updateUserEventParticipationRequests(userId, eventId, eventRequestStatusUpdateRequest);
     }
 
-    @PostMapping("/{userId}/comments")
+    @PostMapping("/{userId}/events/{eventId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
-    public CommentResponseDto addComment(@PathVariable("userId") int userId, @RequestBody @Validated NewCommentDto commentDto) {
+    public CommentResponseDto addComment(@PathVariable("userId") int userId, @PathVariable("eventId") int eventId, @RequestBody @Validated NewCommentDto commentDto) {
         log.info(LOGGER_ADD_EVENT_MESSAGE);
-        return commentService.addComment(userId, commentDto);
+        return commentService.addComment(userId, eventId, commentDto);
     }
 
     @GetMapping("/{userId}/comments")

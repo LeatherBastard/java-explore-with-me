@@ -8,9 +8,9 @@ import java.util.List;
 
 public interface CommentService {
 
-    CommentResponseDto addComment(int userId, NewCommentDto newCommentDto);
+    CommentResponseDto addComment(int userId, int eventId, NewCommentDto newCommentDto);
 
-    List<CommentResponseDto> findAllCommentsByAdmin(List<Integer> users, List<Integer> events, List<String> states,
+    List<CommentResponseDto> findAllCommentsByAdmin(List<Integer> users, List<Integer> events,
                                                     LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size);
 
     List<CommentResponseDto> findAllComments(String text,
