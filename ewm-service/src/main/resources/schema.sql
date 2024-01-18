@@ -64,3 +64,10 @@ CREATE TABLE events_compilations(
     UNIQUE (compilation_id, event_id)
 );
 
+CREATE TABLE comments(
+    id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+    text VARCHAR(500) NOT NULL;
+);
+

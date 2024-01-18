@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
 import ru.practicum.client.statistic.StatisticHttpClient;
+import ru.practicum.comment.dto.CommentResponseDto;
+import ru.practicum.comment.service.CommentService;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.service.CompilationService;
 import ru.practicum.event.dto.EventFullDto;
@@ -35,6 +37,7 @@ public class PublicController {
     private final CategoryService categoryService;
     private final EventService eventService;
     private final CompilationService compilationService;
+    private final CommentService commentService;
     private final StatisticHttpClient statisticHttpClient;
 
     @GetMapping("/categories")
@@ -101,6 +104,16 @@ public class PublicController {
     public CompilationDto getCompilation(@PathVariable("compId") int compId) {
         log.info(LOGGER_GET_COMPILATION_BY_ID_MESSAGE, compId);
         return compilationService.getById(compId);
+    }
+
+    @GetMapping("/comments")
+    public List<CommentResponseDto> getComments(@RequestParam(required = false) String text,
+                                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
+                                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
+                                                @RequestParam(defaultValue = "0") int from,
+                                                @RequestParam(defaultValue = "10") int size) {
+        log.info(LOGGER_GET_COMMENTS_MESSAGE);
+        return commentService.findAllComments(text, rangeStart, rangeEnd, from, size);
     }
 
 
