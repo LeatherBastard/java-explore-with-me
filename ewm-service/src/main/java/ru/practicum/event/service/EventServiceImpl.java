@@ -149,7 +149,7 @@ public class EventServiceImpl implements EventService {
                                             int size) {
         if (rangeStart != null && rangeEnd != null) {
             if (rangeStart.isAfter(rangeEnd)) {
-                throw new EventWrongDateRangeException(rangeStart, rangeEnd);
+                throw new WrongDateRangeException(rangeStart, rangeEnd);
             }
         }
 

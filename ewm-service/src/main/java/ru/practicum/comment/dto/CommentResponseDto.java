@@ -14,4 +14,5 @@ public class CommentResponseDto {
     private UserShortDto user;
     private EventShortDto event;
     private String text;
+    private String created;
 }

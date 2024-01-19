@@ -33,6 +33,8 @@ public class PublicController {
     private static final String LOGGER_GET_CATEGORY_BY_ID_MESSAGE = "Getting category with id: {}";
     private static final String LOGGER_GET_EVENT_BY_ID_MESSAGE = "Getting event with id: {}";
     private static final String LOGGER_GET_COMPILATION_BY_ID_MESSAGE = "Getting compilation with id: {}";
+    private static final String LOGGER_GET_COMMENTS_MESSAGE = "Returning list of comments";
+
 
     private final CategoryService categoryService;
     private final EventService eventService;
@@ -108,12 +110,13 @@ public class PublicController {
 
     @GetMapping("/comments")
     public List<CommentResponseDto> getComments(@RequestParam(required = false) String text,
+                                                @RequestParam(required = false) List<Integer> events,
                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
                                                 @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
                                                 @RequestParam(defaultValue = "0") int from,
                                                 @RequestParam(defaultValue = "10") int size) {
         log.info(LOGGER_GET_COMMENTS_MESSAGE);
-        return commentService.findAllComments(text, rangeStart, rangeEnd, from, size);
+        return commentService.findAllComments(text, events, rangeStart, rangeEnd, from, size);
     }
 
 

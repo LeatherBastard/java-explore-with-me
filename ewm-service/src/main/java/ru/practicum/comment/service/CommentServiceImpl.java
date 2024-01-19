@@ -4,13 +4,33 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.comment.dto.CommentResponseDto;
 import ru.practicum.comment.dto.NewCommentDto;
+import ru.practicum.comment.dto.UpdateCommentUserRequest;
+import ru.practicum.comment.mapper.CommentMapper;
+import ru.practicum.comment.model.Comment;
 import ru.practicum.comment.repository.CommentRepository;
+import ru.practicum.event.model.Event;
+import ru.practicum.event.model.EventState;
 import ru.practicum.event.repository.EventRepository;
+import ru.practicum.exception.*;
 import ru.practicum.participationrequest.repository.ParticipationRequestRepository;
+import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
+import javax.persistence.EntityManager;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import static ru.practicum.event.service.EventServiceImpl.EVENT_NOT_FOUND_MESSAGE;
+import static ru.practicum.user.service.UserServiceImpl.USER_NOT_FOUND_MESSAGE;
 
 @Service
 @RequiredArgsConstructor
@@ -19,50 +39,169 @@ public class CommentServiceImpl implements CommentService {
     private final EventRepository eventRepository;
     private final ParticipationRequestRepository requestRepository;
     private final CommentRepository commentRepository;
+    private final CommentMapper mapper;
+    private final EntityManager entityManager;
 
-    /*
-    Добавление комментария
-        1.Если пользователь участник события
-        2.Его заявка подтверждена
-        3.Если событие уже прошло
+    public static final String COMMENT_NOT_FOUND_MESSAGE = "Comment with id %d was not found";
 
-     */
     @Override
     public CommentResponseDto addComment(int userId, int eventId, NewCommentDto newCommentDto) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        User user = optionalUser.get();
+        Optional<Event> optionalEvent = eventRepository.findById(eventId);
+        if (optionalEvent.isEmpty())
+            throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
+        Event event = optionalEvent.get();
+        if (!event.getState().equals(EventState.PUBLISHED)) {
+            throw new EventNotPublishedException(eventId);
+        }
+        Comment comment = Comment.builder()
+                .user(user).event(event).text(newCommentDto.getText()).created(LocalDateTime.now())
+                .build();
+        return mapper.mapToCommentDto(commentRepository.save(comment));
+    }
+
+    @Override
+    public CommentResponseDto findUserCommentById(int userId, int comId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        Optional<Comment> optionalComment = commentRepository.findById(comId);
+        if (optionalComment.isEmpty())
+            throw new EntityNotFoundException(COMMENT_NOT_FOUND_MESSAGE, comId);
+        Comment comment = optionalComment.get();
+        if (comment.getUser().getId() != userId)
+            throw new CommentWrongOwnerException(comId, userId);
+        return mapper.mapToCommentDto(comment);
 
     }
 
     @Override
     public List<CommentResponseDto> findAllCommentsByAdmin(List<Integer> users, List<Integer> events, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
-        return null;
+
+        if (rangeStart != null && rangeEnd != null) {
+            if (rangeStart.isAfter(rangeEnd)) {
+                throw new WrongDateRangeException(rangeStart, rangeEnd);
+            }
+        }
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Comment> criteriaQuery = criteriaBuilder.createQuery(Comment.class);
+        Root<Comment> root = criteriaQuery.from(Comment.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (users != null) {
+            predicates.add(criteriaBuilder.isTrue(root.get("user").in(users)));
+        }
+        if (events != null) {
+            predicates.add(criteriaBuilder.isTrue(root.get("event").in(events)));
+        }
+
+        if (rangeStart != null && rangeEnd != null) {
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("created"), rangeStart));
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("created"), rangeEnd));
+        } else {
+            predicates.add(criteriaBuilder.greaterThan(root.get("created"), LocalDateTime.now()));
+        }
+
+        criteriaQuery.select(root).where(predicates.toArray(new Predicate[predicates.size()]));
+        TypedQuery<Comment> query = entityManager.createQuery(criteriaQuery)
+                .setFirstResult(from)
+                .setMaxResults(size);
+
+        return query.getResultList()
+                .stream()
+                .map(mapper::mapToCommentDto)
+                .collect(Collectors.toList());
+
     }
 
     @Override
-    public List<CommentResponseDto> findAllComments(String text, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
-        return null;
+    public List<CommentResponseDto> findAllComments(String text, List<Integer> events, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
+        CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Comment> criteriaQuery = criteriaBuilder.createQuery(Comment.class);
+        Root<Comment> root = criteriaQuery.from(Comment.class);
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (text != null) {
+            predicates.add(criteriaBuilder.like(
+                    criteriaBuilder.lower(root.get("text")),
+                    "%" + text.toLowerCase() + "%")
+            );
+        }
+        if (events != null) {
+            predicates.add(criteriaBuilder.isTrue(root.get("event").in(events)));
+        }
+
+        if (rangeStart != null && rangeEnd != null) {
+            predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("created"), rangeStart));
+            predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("created"), rangeEnd));
+        } else {
+            predicates.add(criteriaBuilder.greaterThan(root.get("created"), LocalDateTime.now()));
+        }
+        criteriaQuery.select(root).where(predicates.toArray(new Predicate[predicates.size()]));
+        TypedQuery<Comment> query = entityManager.createQuery(criteriaQuery)
+                .setFirstResult(from)
+                .setMaxResults(size);
+
+        return query.getResultList()
+                .stream()
+                .map(mapper::mapToCommentDto)
+                .collect(Collectors.toList());
     }
 
     @Override
     public List<CommentResponseDto> findAllCommentsByUser(int userId, int from, int size) {
-        return null;
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        return commentRepository.findByUser_Id(userId)
+                .stream()
+                .map(mapper::mapToCommentDto)
+                .collect(Collectors.toList());
     }
 
-    /*
-    Редактирование комментария
-        1.Если пользователь участник события
-        2.Его заявка подтверждена
-        3.Если событие уже прошло
-        4.Если с момента написания комментария прошло не больше n-часов( добавить поле created в базу, потому что есть поиск по дате)
-            в коде с событиями, есть вычисление часов
-     */
+    @Override
+    public CommentResponseDto updateCommentByUser(int userId, int comId, UpdateCommentUserRequest commentRequest) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        Optional<Comment> optionalComment = commentRepository.findById(comId);
+        if (optionalComment.isEmpty())
+            throw new EntityNotFoundException(COMMENT_NOT_FOUND_MESSAGE, comId);
+        Comment comment = optionalComment.get();
+        if (comment.getUser().getId() != userId)
+            throw new CommentWrongOwnerException(comId, userId);
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        Duration duration = Duration.between(currentDateTime, comment.getCreated());
+        if (duration.toMinutes() < 5)
+            throw new CommentExceedsTimeLimitException(comId);
+        comment.setText(commentRequest.getText());
+        return mapper.mapToCommentDto(commentRepository.save(comment));
+    }
 
-    /*
-    Удаления комментария от админа(айди комментария)
-    1.Существет ли комментарий
-    Удаление комментария от пользователя(айди комментария)
-    1.Существует ли пользователь
-    2.Существет ли комментарий
-    3. Авторство пользователя
+    @Override
+    public void deleteCommentById(int comId) {
+        Optional<Comment> optionalComment = commentRepository.findById(comId);
+        if (optionalComment.isEmpty())
+            throw new EntityNotFoundException(COMMENT_NOT_FOUND_MESSAGE, comId);
+        commentRepository.delete(optionalComment.get());
+    }
 
-     */
+    @Override
+    public void deleteUserCommentById(int userId, int comId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        Optional<Comment> optionalComment = commentRepository.findById(comId);
+        if (optionalComment.isEmpty())
+            throw new EntityNotFoundException(COMMENT_NOT_FOUND_MESSAGE, comId);
+        Comment comment = optionalComment.get();
+        if (comment.getUser().getId() != userId)
+            throw new CommentWrongOwnerException(comId, userId);
+        commentRepository.delete(comment);
+    }
 }

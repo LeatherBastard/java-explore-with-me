@@ -29,7 +29,7 @@ import static ru.practicum.user.service.UserServiceImpl.USER_NOT_FOUND_MESSAGE;
 @RequiredArgsConstructor
 public class ParticipationRequestServiceImpl implements ParticipationRequestService {
     public static final String PARTICIPATION_REQUEST_NOT_FOUND_MESSAGE = "Participation request with id %d not found";
-
+    public static final String PARTICIPATION_REQUEST_NOT_FOUND_BY_ID_MESSAGE = "Participation request of event %d not found";
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
     private final ParticipationRequestRepository repository;
@@ -49,13 +49,13 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
             throw new ParticipationRequestOwnerParticipantException(eventId, userId);
         }
 
-        List<ParticipationRequest> requests = repository.findByEvent_IdAndRequester_Id(eventId, userId);
-        if (!requests.isEmpty()) {
+        Optional<ParticipationRequest> request = repository.findByEvent_IdAndRequester_Id(eventId, userId);
+        if (request.isPresent()) {
             throw new ParticipationRequestAlreadyAddedException(eventId, userId);
         }
 
         if (!event.getState().equals(EventState.PUBLISHED)) {
-            throw new ParticipationRequestEventNotPublishedException(eventId);
+            throw new EventNotPublishedException(eventId);
         }
 
 

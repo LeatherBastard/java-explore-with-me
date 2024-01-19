@@ -44,6 +44,9 @@ public class AdminController {
     private static final String LOGGER_REMOVE_COMPILATION_MESSAGE = "Removing compilation with id: {}";
     private static final String LOGGER_UPDATE_COMPILATION_MESSAGE = "Updating compilation with id: {}";
 
+    private static final String LOGGER_GET_COMMENTS_MESSAGE = "Returning list of comments for admin";
+
+
 
     private final UserService userService;
     private final CategoryService categoryService;

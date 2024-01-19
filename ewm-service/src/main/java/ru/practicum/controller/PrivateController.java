@@ -37,6 +37,9 @@ public class PrivateController {
     private static final String LOGGER_UPDATE_REQUESTS_MESSAGE = "Updating requests status for user`s {} event with id: {}";
     private static final String LOGGER_GET_EVENTS_MESSAGE = "Returning list of events for user with id: {}";
 
+    private static final String LOGGER_GET_COMMENTS_MESSAGE = "Returning list of user {} comments:";
+    private static final String LOGGER_ADD_COMMENT_MESSAGE = "Adding event";
+
     private final EventService eventService;
     private final CommentService commentService;
     private final ParticipationRequestService participationRequestService;
@@ -106,7 +109,7 @@ public class PrivateController {
     @PostMapping("/{userId}/events/{eventId}/comments")
     @ResponseStatus(HttpStatus.CREATED)
     public CommentResponseDto addComment(@PathVariable("userId") int userId, @PathVariable("eventId") int eventId, @RequestBody @Validated NewCommentDto commentDto) {
-        log.info(LOGGER_ADD_EVENT_MESSAGE);
+        log.info(LOGGER_ADD_COMMENT_MESSAGE);
         return commentService.addComment(userId, eventId, commentDto);
     }
 

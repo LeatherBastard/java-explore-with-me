@@ -5,6 +5,7 @@ import ru.practicum.event.model.Event;
 import ru.practicum.user.model.User;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -26,5 +27,7 @@ public class Comment {
     private Event event;
     @Column(name = "text", nullable = false, length = 500)
     private String text;
+    @Column(name = "created", nullable = false)
+    private LocalDateTime created;
 
 }

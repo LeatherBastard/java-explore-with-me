@@ -5,12 +5,13 @@ import org.springframework.stereotype.Repository;
 import ru.practicum.participationrequest.model.ParticipationRequest;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ParticipationRequestRepository extends JpaRepository<ParticipationRequest, Integer> {
     List<ParticipationRequest> findByRequester_Id(int requesterId);
 
-    List<ParticipationRequest> findByEvent_IdAndRequester_Id(int eventId, int requesterId);
+    Optional<ParticipationRequest> findByEvent_IdAndRequester_Id(int eventId, int requesterId);
 
     List<ParticipationRequest> findByEvent_Id(int eventId);
 

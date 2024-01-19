@@ -52,7 +52,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleEventWrongDateRangeException(final EventWrongDateRangeException exception) {
+    public ApiError handleEventWrongDateRangeException(final WrongDateRangeException exception) {
         return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
 
     }
@@ -64,6 +64,13 @@ public class ErrorHandler {
 
     }
 
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleCommentExceedsTimeLimitException(final CommentExceedsTimeLimitException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
@@ -81,7 +88,7 @@ public class ErrorHandler {
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleParticipationRequestEventNotPublishedException(final ParticipationRequestEventNotPublishedException exception) {
+    public ApiError handleParticipationRequestEventNotPublishedException(final EventNotPublishedException exception) {
         return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
 
     }
@@ -97,6 +104,13 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleParticipationRequestOwnerParticipantException(final ParticipationRequestOwnerParticipantException exception) {
+        return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
+
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleCommentWrongOwnerException(final CommentWrongOwnerException exception) {
         return new ApiError(BAD_REQUEST_STATUS, BAD_REQUEST_REASON, exception.toString(), LocalDateTime.now());
 
     }
@@ -137,6 +151,12 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleEventWrongStateException(final EventWrongStateException exception) {
+        return new ApiError(NOT_FOUND_STATUS, NOT_FOUND_REASON, exception.getMessage(), LocalDateTime.now());
+    }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleParticipationRequestWrongStateException(final ParticipationRequestWrongStateException exception) {
         return new ApiError(NOT_FOUND_STATUS, NOT_FOUND_REASON, exception.getMessage(), LocalDateTime.now());
     }
 
