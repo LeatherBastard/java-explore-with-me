@@ -32,7 +32,8 @@ services:
     depends_on:
       - ewm-db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql:ewm-db:5431/ewm-db
+      - STATS-SERVER_URL=http://stats-server:9090
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://ewm-db:5432/explore-with-me
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=pass
 
@@ -40,8 +41,8 @@ services:
     image: postgres:14-alpine
     container_name: ewm-service-db-container
     ports:
-      - "6542:5431"
+      - "6542:5432"
     environment:
-      - POSTGRES_DB=ewmbase
+      - POSTGRES_DB=explore-with-me
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=pass

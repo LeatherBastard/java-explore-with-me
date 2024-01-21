@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 
 @Component
 public class StatisticMapper {
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
 
     public Statistic mapToStatistic(StatisticRequestDto statisticRequestDto) {

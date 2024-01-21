@@ -10,15 +10,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.practicum.statistic.dto.StatisticRequestDto;
 
-import java.time.LocalDateTime;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class StatisticHttpClient {
+
+
     private final RestTemplate rest;
+
 
     @Autowired
     public StatisticHttpClient(@Value("${stats-server.url}") String serverUrl, RestTemplateBuilder builder) {
@@ -32,19 +36,21 @@ public class StatisticHttpClient {
         return post("/hit", null, requestDto);
     }
 
-    public ResponseEntity<Object> getStats(LocalDateTime start, LocalDateTime end, List<String> uris, boolean unique) {
-        Map<String, Object> parameters = Map.of(
-                "start", start,
-                "end", end,
-                "unique", unique
-        );
-        if (uris != null) {
-            for (int i = 0; i < uris.size(); i++) {
-                parameters.put("uris[" + (i + 1) + "]", uris.get(i));
-            }
-        }
+    public ResponseEntity<Object> getStats(String start, String end, List<String> uris, boolean unique) {
 
-        return get("/stats", parameters);
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUri(URI.create("/stats"));
+
+        builder.queryParam("start", start);
+        builder.queryParam("end", end);
+
+        for (String uri : uris) {
+            builder.queryParam("uris", uri);
+        }
+        builder.queryParam("unique", unique);
+
+
+        return get(builder.toUriString(), null);
     }
 
     private <T> ResponseEntity<Object> post(String path, @Nullable Map<String, Object> parameters, T body) {
