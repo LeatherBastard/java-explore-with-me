@@ -7,6 +7,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.comment.dto.CommentResponseDto;
 import ru.practicum.comment.dto.NewCommentDto;
+import ru.practicum.comment.dto.UpdateCommentUserRequest;
 import ru.practicum.comment.service.CommentService;
 import ru.practicum.event.dto.EventFullDto;
 import ru.practicum.event.dto.NewEventDto;
@@ -39,6 +40,10 @@ public class PrivateController {
 
     private static final String LOGGER_GET_COMMENTS_MESSAGE = "Returning list of user {} comments:";
     private static final String LOGGER_ADD_COMMENT_MESSAGE = "Adding event";
+
+    private static final String LOGGER_GET_COMMENT_BY_ID_MESSAGE = "Getting comment of user {} with id: {}";
+    private static final String LOGGER_UPDATE_COMMENT_MESSAGE = "Updating comment of user {} with id: {}";
+    private static final String LOGGER_REMOVE_COMMENT_MESSAGE = "Removing comment with id: {}";
 
     private final EventService eventService;
     private final CommentService commentService;
@@ -119,5 +124,23 @@ public class PrivateController {
         return commentService.findAllCommentsByUser(userId, from, size);
     }
 
+    @GetMapping("/{userId}/comments/{commentId}")
+    public CommentResponseDto getComment(@PathVariable("userId") int userId, @PathVariable("commentId") int commentId) {
+        log.info(LOGGER_GET_COMMENT_BY_ID_MESSAGE, userId, commentId);
+        return commentService.findUserCommentById(userId, commentId);
+    }
+
+    @PatchMapping("/{userId}/comments/{commentId}")
+    public CommentResponseDto updateUserComment(@PathVariable("userId") int userId, @PathVariable("commentId") int commentId, @RequestBody UpdateCommentUserRequest commentRequest) {
+        log.info(LOGGER_UPDATE_COMMENT_MESSAGE, userId, commentId);
+        return commentService.updateCommentByUser(userId, commentId, commentRequest);
+    }
+
+    @DeleteMapping("/{userId}/comments/{commentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteComment(@PathVariable("userId") int userId, @PathVariable("commentId") int commentId) {
+        log.info(LOGGER_REMOVE_COMMENT_MESSAGE, commentId);
+        commentService.deleteUserCommentById(userId, commentId);
+    }
 
 }

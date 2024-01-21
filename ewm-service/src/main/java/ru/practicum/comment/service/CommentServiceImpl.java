@@ -8,11 +8,12 @@ import ru.practicum.comment.dto.UpdateCommentUserRequest;
 import ru.practicum.comment.mapper.CommentMapper;
 import ru.practicum.comment.model.Comment;
 import ru.practicum.comment.repository.CommentRepository;
+import ru.practicum.event.mapper.EventMapper;
 import ru.practicum.event.model.Event;
 import ru.practicum.event.model.EventState;
 import ru.practicum.event.repository.EventRepository;
 import ru.practicum.exception.*;
-import ru.practicum.participationrequest.repository.ParticipationRequestRepository;
+import ru.practicum.user.mapper.UserMapper;
 import ru.practicum.user.model.User;
 import ru.practicum.user.repository.UserRepository;
 
@@ -27,7 +28,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static ru.practicum.event.service.EventServiceImpl.EVENT_NOT_FOUND_MESSAGE;
 import static ru.practicum.user.service.UserServiceImpl.USER_NOT_FOUND_MESSAGE;
@@ -37,8 +37,9 @@ import static ru.practicum.user.service.UserServiceImpl.USER_NOT_FOUND_MESSAGE;
 public class CommentServiceImpl implements CommentService {
     private final UserRepository userRepository;
     private final EventRepository eventRepository;
-    private final ParticipationRequestRepository requestRepository;
     private final CommentRepository commentRepository;
+    private final UserMapper userMapper;
+    private final EventMapper eventMapper;
     private final CommentMapper mapper;
     private final EntityManager entityManager;
 
@@ -60,7 +61,10 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = Comment.builder()
                 .user(user).event(event).text(newCommentDto.getText()).created(LocalDateTime.now())
                 .build();
-        return mapper.mapToCommentDto(commentRepository.save(comment));
+        CommentResponseDto commentDto = mapper.mapToCommentDto(commentRepository.save(comment));
+        commentDto.setUser(userMapper.mapToUserShortDto(comment.getUser()));
+        commentDto.setEvent(eventMapper.mapToEventShortDto(comment.getEvent()));
+        return commentDto;
     }
 
     @Override
@@ -74,7 +78,10 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = optionalComment.get();
         if (comment.getUser().getId() != userId)
             throw new CommentWrongOwnerException(comId, userId);
-        return mapper.mapToCommentDto(comment);
+        CommentResponseDto commentDto = mapper.mapToCommentDto(commentRepository.save(comment));
+        commentDto.setUser(userMapper.mapToUserShortDto(comment.getUser()));
+        commentDto.setEvent(eventMapper.mapToEventShortDto(comment.getEvent()));
+        return commentDto;
 
     }
 
@@ -103,7 +110,7 @@ public class CommentServiceImpl implements CommentService {
             predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("created"), rangeStart));
             predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("created"), rangeEnd));
         } else {
-            predicates.add(criteriaBuilder.greaterThan(root.get("created"), LocalDateTime.now()));
+            predicates.add(criteriaBuilder.greaterThan(root.get("created"), LocalDateTime.now().minusDays(1)));
         }
 
         criteriaQuery.select(root).where(predicates.toArray(new Predicate[predicates.size()]));
@@ -111,11 +118,9 @@ public class CommentServiceImpl implements CommentService {
                 .setFirstResult(from)
                 .setMaxResults(size);
 
-        return query.getResultList()
-                .stream()
-                .map(mapper::mapToCommentDto)
-                .collect(Collectors.toList());
+        List<Comment> comments = query.getResultList();
 
+        return setUserAndEventToCommentDto(comments);
     }
 
     @Override
@@ -140,17 +145,15 @@ public class CommentServiceImpl implements CommentService {
             predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("created"), rangeStart));
             predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("created"), rangeEnd));
         } else {
-            predicates.add(criteriaBuilder.greaterThan(root.get("created"), LocalDateTime.now()));
+            predicates.add(criteriaBuilder.greaterThan(root.get("created"), LocalDateTime.now().minusDays(1)));
         }
         criteriaQuery.select(root).where(predicates.toArray(new Predicate[predicates.size()]));
         TypedQuery<Comment> query = entityManager.createQuery(criteriaQuery)
                 .setFirstResult(from)
                 .setMaxResults(size);
 
-        return query.getResultList()
-                .stream()
-                .map(mapper::mapToCommentDto)
-                .collect(Collectors.toList());
+        List<Comment> comments = query.getResultList();
+        return setUserAndEventToCommentDto(comments);
     }
 
     @Override
@@ -158,10 +161,9 @@ public class CommentServiceImpl implements CommentService {
         Optional<User> optionalUser = userRepository.findById(userId);
         if (optionalUser.isEmpty())
             throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
-        return commentRepository.findByUser_Id(userId)
-                .stream()
-                .map(mapper::mapToCommentDto)
-                .collect(Collectors.toList());
+
+        List<Comment> comments = commentRepository.findByUser_Id(userId);
+        return setUserAndEventToCommentDto(comments);
     }
 
     @Override
@@ -177,10 +179,13 @@ public class CommentServiceImpl implements CommentService {
             throw new CommentWrongOwnerException(comId, userId);
         LocalDateTime currentDateTime = LocalDateTime.now();
         Duration duration = Duration.between(currentDateTime, comment.getCreated());
-        if (duration.toMinutes() < 5)
+        if (duration.toMinutes() > 5)
             throw new CommentExceedsTimeLimitException(comId);
         comment.setText(commentRequest.getText());
-        return mapper.mapToCommentDto(commentRepository.save(comment));
+        CommentResponseDto commentDto = mapper.mapToCommentDto(commentRepository.save(comment));
+        commentDto.setUser(userMapper.mapToUserShortDto(comment.getUser()));
+        commentDto.setEvent(eventMapper.mapToEventShortDto(comment.getEvent()));
+        return commentDto;
     }
 
     @Override
@@ -203,5 +208,16 @@ public class CommentServiceImpl implements CommentService {
         if (comment.getUser().getId() != userId)
             throw new CommentWrongOwnerException(comId, userId);
         commentRepository.delete(comment);
+    }
+
+    private List<CommentResponseDto> setUserAndEventToCommentDto(List<Comment> comments) {
+        List<CommentResponseDto> result = new ArrayList<>();
+        for (Comment comment : comments) {
+            CommentResponseDto commentDto = mapper.mapToCommentDto(comment);
+            commentDto.setUser(userMapper.mapToUserShortDto(comment.getUser()));
+            commentDto.setEvent(eventMapper.mapToEventShortDto(comment.getEvent()));
+            result.add(commentDto);
+        }
+        return result;
     }
 }

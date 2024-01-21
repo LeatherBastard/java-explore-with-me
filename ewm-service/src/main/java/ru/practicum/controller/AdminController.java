@@ -45,7 +45,7 @@ public class AdminController {
     private static final String LOGGER_UPDATE_COMPILATION_MESSAGE = "Updating compilation with id: {}";
 
     private static final String LOGGER_GET_COMMENTS_MESSAGE = "Returning list of comments for admin";
-
+    private static final String LOGGER_REMOVE_COMMENT_MESSAGE = "Removing comment with id: {}";
 
 
     private final UserService userService;
@@ -142,6 +142,13 @@ public class AdminController {
                                                 @RequestParam(defaultValue = "10") int size) {
         log.info(LOGGER_GET_COMMENTS_MESSAGE);
         return commentService.findAllCommentsByAdmin(users, events, rangeStart, rangeEnd, from, size);
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteComment(@PathVariable("commentId") int commentId) {
+        log.info(LOGGER_REMOVE_COMMENT_MESSAGE, commentId);
+         commentService.deleteCommentById(commentId);
     }
 
 }
