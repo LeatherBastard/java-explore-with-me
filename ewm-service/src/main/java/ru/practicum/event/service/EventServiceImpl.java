@@ -412,13 +412,13 @@ public class EventServiceImpl implements EventService {
                 LocalDateTime.now().plusYears(100).format(formatter), List.of(request.getRequestURI()), true);
 
         Optional<Object> entityBody = Optional.of(entityStats.getBody());
-        if (entityBody.isEmpty())
-            throw new EntityNotFoundException(ENTITY_BODY_NOT_FOUND_MESSAGE, 0);
         int hits = 0;
-        String content = entityBody.get().toString();
-        if (content.length() > 2) {
-            String number = content.substring(content.lastIndexOf("=") + 1, content.lastIndexOf("}"));
-            hits = Integer.parseInt(number);
+        if (entityBody.isPresent()) {
+            String content = entityBody.get().toString();
+            if (content.length() > 2) {
+                String number = content.substring(content.lastIndexOf("=") + 1, content.lastIndexOf("}"));
+                hits = Integer.parseInt(number);
+            }
         }
         return hits;
     }
