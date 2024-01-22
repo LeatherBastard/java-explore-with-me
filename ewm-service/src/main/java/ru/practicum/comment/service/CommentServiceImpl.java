@@ -69,25 +69,15 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentResponseDto findUserCommentById(int userId, int comId) {
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if (optionalUser.isEmpty())
-            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
-        Optional<Comment> optionalComment = commentRepository.findById(comId);
-        if (optionalComment.isEmpty())
-            throw new EntityNotFoundException(COMMENT_NOT_FOUND_MESSAGE, comId);
-        Comment comment = optionalComment.get();
-        if (comment.getUser().getId() != userId)
-            throw new CommentWrongOwnerException(comId, userId);
+        Comment comment = getUserCommentById(userId, comId);
         CommentResponseDto commentDto = mapper.mapToCommentDto(commentRepository.save(comment));
         commentDto.setUser(userMapper.mapToUserShortDto(comment.getUser()));
         commentDto.setEvent(eventMapper.mapToEventShortDto(comment.getEvent()));
         return commentDto;
-
     }
 
     @Override
     public List<CommentResponseDto> findAllCommentsByAdmin(List<Integer> users, List<Integer> events, LocalDateTime rangeStart, LocalDateTime rangeEnd, int from, int size) {
-
         if (rangeStart != null && rangeEnd != null) {
             if (rangeStart.isAfter(rangeEnd)) {
                 throw new WrongDateRangeException(rangeStart, rangeEnd);
@@ -112,14 +102,11 @@ public class CommentServiceImpl implements CommentService {
         } else {
             predicates.add(criteriaBuilder.greaterThan(root.get("created"), LocalDateTime.now().minusDays(1)));
         }
-
         criteriaQuery.select(root).where(predicates.toArray(new Predicate[predicates.size()]));
         TypedQuery<Comment> query = entityManager.createQuery(criteriaQuery)
                 .setFirstResult(from)
                 .setMaxResults(size);
-
         List<Comment> comments = query.getResultList();
-
         return setUserAndEventToCommentDto(comments);
     }
 
@@ -151,7 +138,6 @@ public class CommentServiceImpl implements CommentService {
         TypedQuery<Comment> query = entityManager.createQuery(criteriaQuery)
                 .setFirstResult(from)
                 .setMaxResults(size);
-
         List<Comment> comments = query.getResultList();
         return setUserAndEventToCommentDto(comments);
     }
@@ -168,15 +154,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public CommentResponseDto updateCommentByUser(int userId, int comId, UpdateCommentUserRequest commentRequest) {
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if (optionalUser.isEmpty())
-            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
-        Optional<Comment> optionalComment = commentRepository.findById(comId);
-        if (optionalComment.isEmpty())
-            throw new EntityNotFoundException(COMMENT_NOT_FOUND_MESSAGE, comId);
-        Comment comment = optionalComment.get();
-        if (comment.getUser().getId() != userId)
-            throw new CommentWrongOwnerException(comId, userId);
+        Comment comment = getUserCommentById(userId, comId);
         LocalDateTime currentDateTime = LocalDateTime.now();
         Duration duration = Duration.between(currentDateTime, comment.getCreated());
         if (duration.toMinutes() > 5)
@@ -190,10 +168,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public void deleteCommentById(int comId) {
-        Optional<Comment> optionalComment = commentRepository.findById(comId);
-        if (optionalComment.isEmpty())
-            throw new EntityNotFoundException(COMMENT_NOT_FOUND_MESSAGE, comId);
-        commentRepository.delete(optionalComment.get());
+        commentRepository.delete(getCommentById(comId));
     }
 
     @Override
@@ -219,5 +194,22 @@ public class CommentServiceImpl implements CommentService {
             result.add(commentDto);
         }
         return result;
+    }
+
+    private Comment getCommentById(int comId) {
+        Optional<Comment> optionalComment = commentRepository.findById(comId);
+        if (optionalComment.isEmpty())
+            throw new EntityNotFoundException(COMMENT_NOT_FOUND_MESSAGE, comId);
+        return optionalComment.get();
+    }
+
+    private Comment getUserCommentById(int userId, int comId) {
+        Optional<User> optionalUser = userRepository.findById(userId);
+        if (optionalUser.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        Comment comment = getCommentById(comId);
+        if (comment.getUser().getId() != userId)
+            throw new CommentWrongOwnerException(comId, userId);
+        return comment;
     }
 }
