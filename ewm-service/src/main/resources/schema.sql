@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS locations CASCADE;
 DROP TABLE IF EXISTS events_compilations CASCADE;
+DROP TABLE IF EXISTS comments CASCADE;
 
 
 CREATE TABLE users(
@@ -62,5 +63,13 @@ CREATE TABLE events_compilations(
     compilation_id INTEGER NOT NULL REFERENCES compilations (id),
     event_id INTEGER NOT NULL REFERENCES events (id),
     UNIQUE (compilation_id, event_id)
+);
+
+CREATE TABLE comments(
+    id INTEGER NOT NULL GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    event_id INTEGER REFERENCES events(id) ON DELETE CASCADE,
+    text VARCHAR(500) NOT NULL,
+    created TIMESTAMP NOT NULL
 );
 

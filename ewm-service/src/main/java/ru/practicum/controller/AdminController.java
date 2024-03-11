@@ -9,6 +9,8 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.category.dto.CategoryDto;
 import ru.practicum.category.service.CategoryService;
+import ru.practicum.comment.dto.CommentResponseDto;
+import ru.practicum.comment.service.CommentService;
 import ru.practicum.compilation.dto.CompilationDto;
 import ru.practicum.compilation.dto.NewCompilationDto;
 import ru.practicum.compilation.dto.UpdateCompilationRequest;
@@ -42,11 +44,15 @@ public class AdminController {
     private static final String LOGGER_REMOVE_COMPILATION_MESSAGE = "Removing compilation with id: {}";
     private static final String LOGGER_UPDATE_COMPILATION_MESSAGE = "Updating compilation with id: {}";
 
+    private static final String LOGGER_GET_COMMENTS_MESSAGE = "Returning list of comments for admin";
+    private static final String LOGGER_REMOVE_COMMENT_MESSAGE = "Removing comment with id: {}";
+
 
     private final UserService userService;
     private final CategoryService categoryService;
     private final EventService eventService;
     private final CompilationService compilationService;
+    private final CommentService commentService;
 
     @PostMapping("/users")
     @ResponseStatus(HttpStatus.CREATED)
@@ -125,6 +131,24 @@ public class AdminController {
     public CompilationDto updateCompilation(@PathVariable("compId") int compId, @RequestBody @Validated UpdateCompilationRequest compilation) {
         log.info(LOGGER_UPDATE_COMPILATION_MESSAGE, compId);
         return compilationService.update(compId, compilation);
+    }
+
+    @GetMapping("/comments")
+    public List<CommentResponseDto> getComments(@RequestParam(required = false) List<Integer> users,
+                                                @RequestParam(required = false) List<Integer> events,
+                                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
+                                                @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
+                                                @RequestParam(defaultValue = "0") int from,
+                                                @RequestParam(defaultValue = "10") int size) {
+        log.info(LOGGER_GET_COMMENTS_MESSAGE);
+        return commentService.findAllCommentsByAdmin(users, events, rangeStart, rangeEnd, from, size);
+    }
+
+    @DeleteMapping("/comments/{commentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteComment(@PathVariable("commentId") int commentId) {
+        log.info(LOGGER_REMOVE_COMMENT_MESSAGE, commentId);
+         commentService.deleteCommentById(commentId);
     }
 
 }

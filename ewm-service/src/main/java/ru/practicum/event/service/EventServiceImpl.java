@@ -55,6 +55,8 @@ public class EventServiceImpl implements EventService {
     public static final String USER_EVENT_NOT_FOUND_MESSAGE = "Event with id %d was not found";
     public static final String EVENT_UPDATE_STATE_MESSAGE = "Cannot update the event with id %d, because it's not in the right state: %s";
 
+    public static final String ENTITY_BODY_NOT_FOUND_MESSAGE = "Cannot find the entity body, when parsing unique hits number";
+
     private final CategoryRepository categoryRepository;
     private final LocationRepository locationRepository;
     private final UserRepository userRepository;
@@ -110,10 +112,7 @@ public class EventServiceImpl implements EventService {
     }
 
     public EventFullDto getById(int id, HttpServletRequest request) {
-        Optional<Event> optionalEvent = eventRepository.findById(id);
-        if (optionalEvent.isEmpty())
-            throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, id);
-        Event event = optionalEvent.get();
+        Event event = getEventById(id);
         if (!event.getState().equals(EventState.PUBLISHED)) {
             throw new EventWrongStateException(id, event.getState().name());
         }
@@ -122,19 +121,12 @@ public class EventServiceImpl implements EventService {
             event.setViews(hits);
             eventRepository.save(event);
         }
-
         return eventMapper.mapToEventFullDto(event);
     }
 
     @Override
     public EventFullDto findUserEventById(int userId, int eventId) {
-        Optional<User> optionalInitiator = userRepository.findById(userId);
-        if (optionalInitiator.isEmpty())
-            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
-        Optional<Event> optionalEvent = eventRepository.findByInitiator_IdAndId(userId, eventId);
-        if (optionalEvent.isEmpty())
-            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId);
-        return eventMapper.mapToEventFullDto(optionalEvent.get());
+        return eventMapper.mapToEventFullDto(getUserEventById(userId, eventId));
     }
 
     @Override
@@ -149,7 +141,7 @@ public class EventServiceImpl implements EventService {
                                             int size) {
         if (rangeStart != null && rangeEnd != null) {
             if (rangeStart.isAfter(rangeEnd)) {
-                throw new EventWrongDateRangeException(rangeStart, rangeEnd);
+                throw new WrongDateRangeException(rangeStart, rangeEnd);
             }
         }
 
@@ -267,13 +259,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto updateEventByUser(int userId, int eventId, UpdateEventUserRequest userEventRequest) {
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if (optionalUser.isEmpty())
-            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
-        Optional<Event> optionalEvent = eventRepository.findByInitiator_IdAndId(userId, eventId);
-        if (optionalEvent.isEmpty())
-            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId);
-        Event oldEvent = optionalEvent.get();
+        Event oldEvent = getUserEventById(userId, eventId);
 
         if (oldEvent.getState().equals(EventState.PUBLISHED)) {
             throw new EventUpdateStateException(EVENT_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
@@ -338,7 +324,6 @@ public class EventServiceImpl implements EventService {
                 oldEvent.setState(EventState.CANCELED);
             }
         }
-
         if (userEventRequest.getTitle() != null) {
             oldEvent.setTitle(userEventRequest.getTitle());
         }
@@ -348,11 +333,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     public EventFullDto updateEventByAdmin(int eventId, UpdateEventAdminRequest adminEventRequest) {
-
-        Optional<Event> optionalEvent = eventRepository.findById(eventId);
-        if (optionalEvent.isEmpty())
-            throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
-        Event oldEvent = optionalEvent.get();
+        Event oldEvent = getEventById(eventId);
         if (!oldEvent.getState().equals(EventState.PENDING)) {
             throw new EventUpdateStateException(EVENT_UPDATE_STATE_MESSAGE, eventId, oldEvent.getState().name());
         }
@@ -429,12 +410,33 @@ public class EventServiceImpl implements EventService {
         ResponseEntity<Object> entityStats = statisticHttpClient.getStats(
                 LocalDateTime.now().minusYears(100).format(formatter),
                 LocalDateTime.now().plusYears(100).format(formatter), List.of(request.getRequestURI()), true);
-        String content = entityStats.getBody().toString();
+
+        Optional<Object> entityBody = Optional.of(entityStats.getBody());
         int hits = 0;
-        if (content.length() > 2) {
-            String number = content.substring(content.lastIndexOf("=") + 1, content.lastIndexOf("}"));
-            hits = Integer.parseInt(number);
+        if (entityBody.isPresent()) {
+            String content = entityBody.get().toString();
+            if (content.length() > 2) {
+                String number = content.substring(content.lastIndexOf("=") + 1, content.lastIndexOf("}"));
+                hits = Integer.parseInt(number);
+            }
         }
         return hits;
+    }
+
+    private Event getEventById(int eventId) {
+        Optional<Event> optionalEvent = eventRepository.findById(eventId);
+        if (optionalEvent.isEmpty())
+            throw new EntityNotFoundException(EVENT_NOT_FOUND_MESSAGE, eventId);
+        return optionalEvent.get();
+    }
+
+    private Event getUserEventById(int userId, int eventId) {
+        Optional<User> optionalInitiator = userRepository.findById(userId);
+        if (optionalInitiator.isEmpty())
+            throw new EntityNotFoundException(USER_NOT_FOUND_MESSAGE, userId);
+        Optional<Event> optionalEvent = eventRepository.findByInitiator_IdAndId(userId, eventId);
+        if (optionalEvent.isEmpty())
+            throw new EntityNotFoundException(USER_EVENT_NOT_FOUND_MESSAGE, eventId);
+        return optionalEvent.get();
     }
 }
